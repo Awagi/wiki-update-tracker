@@ -9,7 +9,7 @@
 # 7: bot label
 # 8: token
 # 9: log level (DEBUG, INFO, WARNING or CRITICAL)
-if python /usr/src/app/wiki-update.py $1 $2 $3 $4 $5 $6 $7 $8 $9; then
+if [ python /usr/src/app/wiki-update.py $1 $2 $3 $4 $5 $6 $7 $8 $9 = 0 ]; then
     echo "Script failed"
     exit 1
 fi
