@@ -590,7 +590,7 @@ if __name__ == '__main__':
     except APIResponseException as e:
         log.critical("Got an unexpected API response, exiting.")
         log.debug("Unexpected response: {}".format(str(e)))
-        exit(0)
+        exit(1)
 
     out_status = ','.join(["{}:{}".format(f["translation"]["path"], f["translation"]["status"]) for f in tr_files])
     out_issues = ','.join([str(number) for number in open_issues])
