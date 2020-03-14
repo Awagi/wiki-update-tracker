@@ -9,4 +9,6 @@ COPY wiki-update.py wiki-update.py
 
 COPY entrypoint.sh /entrypoint.sh
 
+RUN chmod +x entrypoint.sh
+
 ENTRYPOINT [ "/entrypoint.sh" ]
