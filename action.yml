@@ -1,0 +1,49 @@
+# action.yml
+name: 'Wiki Update Tracker'
+description: 'Check diff in a git repo'
+inputs:
+  repo-path:
+    description: 'The local path of the git repo on the system, make sure you checkout on the desired branch'
+    required: true
+  original-path:
+    description: 'The relative path of original files in the git repo, such as "wiki"'
+    required: true
+  ignored-paths:
+    description: 'The relative ignored paths within original path which should not be reviewed (can be files or entire directories), as a comma-separated list, such as "wiki/LICENSE"'
+    required: false
+    default: ""
+  translation-paths:
+    description: 'The relative paths of translation files in the git repo, matching the original files structure, as a comma-separated list, such as "wiki/fr,wiki/jp"'
+    required: true
+  file-suffix:
+    description: 'The suffix of wiki pages that will be reviewed'
+    required: false
+    default: ".md"
+  bot-label:
+    description: 'The label name used by the script to manage issues, all issues using this label will be managed'
+    required: true
+  token:
+    description: 'The authorization token to update issues (requires read/write access on issues)'
+  log-level:
+    description: 'The python script log level, either DEBUG, INFO, WARNING or ERROR'
+    required: false
+    default: "INFO"
+
+outputs:
+  translation-status: 
+    description: 'The current status for every translation files, in the form "filepath:status", with status being "UPDATE", "TBC" (to be created), "TBI" (to be initialized) or "UTD" (up-to-date), and as a comma-separated list'
+  open-issues:
+    description: 'The numbers of open issues asking a translation update, as a comma-separated list'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.repo-path }}
+    - ${{ inputs.original-path }}
+    - ${{ inputs.ignored-paths }}
+    - ${{ inputs.translation-paths }}
+    - ${{ inputs.file-suffix }}
+    - ${GITHUB_REPOSITORY}
+    - ${{ inputs.bot-label }}
+    - ${{ inputs.token }}
+    - ${{ inputs.log-level }}
