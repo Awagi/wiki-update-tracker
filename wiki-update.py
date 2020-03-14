@@ -363,6 +363,9 @@ def fetch_status_local(git_repo, original_path, translation_paths, original_blac
                                 "lastsha": ori.hexsha,
                                 "lastcommit": repo.active_branch.commit.hexsha
                             }
+                            "context": {
+                                "branch": repo.active_branch.name
+                            }
                         }
                         if status is Status.TBI or status is Status.UTD or status is Status.Update:
                             o["translation"]["sha"] = tra.hexsha
@@ -409,8 +412,8 @@ def update_issues(token, files_status, repo, bot_label):
         log.info("[{}/{}] Updating issue for {}".format(cnt, total, tr_path))
 
         # forge Github URLs, be aware they can't be used in every contexts
-        tr_url = "{}/{}/blob/{}".format(GITHUB_URL, repo, tr_path)
-        or_url = "{}/{}/blob/{}".format(GITHUB_URL, repo, status["original"]["path"])
+        tr_url = "{}/{}/blob/{}/{}".format(GITHUB_URL, repo, status["context"]["branch"], tr_path)
+        or_url = "{}/{}/blob/{}/{}".format(GITHUB_URL, repo, status["original"]["lastcommit"], status["original"]["path"])
         compare_url = "{}/{}/compare/{}...{}#files_bucket".format(GITHUB_URL, repo, status["translation"]["commit"], status["original"]["lastcommit"])
         oldori_raw_url = "{}/{}/raw/{}/{}".format(GITHUB_URL, repo, status["translation"]["commit"], status["original"]["path"])
         ori_raw_url = "{}/{}/raw/{}/{}".format(GITHUB_URL, repo, status["original"]["lastcommit"], status["original"]["path"])
@@ -421,7 +424,7 @@ def update_issues(token, files_status, repo, bot_label):
                 '## :bookmark_tabs: Translation update\n'
                 'Since **`{o[translation][path]}`** was last updated, changes have been detected in the original wiki page `{o[original][path]}` it is based on.\n'
                 '\n'
-                'Please translate and update the translation accordingly **[here]({tr_url})**, respecting contribution guidelines.\n'
+                'Please update **[the translation here]({tr_url})** accordingly, respecting contribution guidelines.\n'
                 '\n'
                 '### :bar_chart: Workload\n'
                 '\n'
@@ -461,7 +464,7 @@ def update_issues(token, files_status, repo, bot_label):
                 '## :page_facing_up: Translation initialization\n'
                 'A new original wiki page has been detected: `{o[original][path]}`. It has no associated translation yet (though the file `{o[translation][path]}` already exists).\n'
                 '\n'
-                'Please initialize the translation here: {tr_url}. Base your translation on the [original English version]({or_url}).\n'
+                'Please **[initialize the translation here]({tr_url})**. Base your translation on the [original English version]({or_url}).\n'
             ).format(o=status, tr_url=tr_url, or_url=or_url)
             label = "translation:new"
             state = "open"
