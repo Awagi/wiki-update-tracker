@@ -362,7 +362,7 @@ def fetch_status_local(git_repo, original_path, translation_paths, original_blac
                                 "path": ori.path,
                                 "lastsha": ori.hexsha,
                                 "lastcommit": repo.active_branch.commit.hexsha
-                            }
+                            },
                             "context": {
                                 "branch": repo.active_branch.name
                             }
