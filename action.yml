@@ -43,7 +43,7 @@ runs:
     - ${{ inputs.ignored-paths }}
     - ${{ inputs.translation-paths }}
     - ${{ inputs.file-suffix }}
-    - ${GITHUB_REPOSITORY}
+    - ${{ github.repository }}
     - ${{ inputs.bot-label }}
     - ${{ inputs.token }}
     - ${{ inputs.log-level }}
