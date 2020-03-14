@@ -44,6 +44,10 @@ These must be given relatively to the git repo root path.
 
 Example: `wiki/fr,wiki/jp`
 
+**`repository`**
+
+The GitHub repository in the form `Author/repo`, used to update issues. Defaults to `${{ github.repository }}`.
+
 **`file-suffix`**
 
 The file suffix (or extension) used to identify Wiki page. Defaults to `.md`.

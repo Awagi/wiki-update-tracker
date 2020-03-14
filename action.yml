@@ -19,6 +19,10 @@ inputs:
     description: 'The suffix of wiki pages that will be reviewed'
     required: false
     default: ".md"
+  repository:
+    description: 'The repository to update issues, in the form "Author/repo"'
+    required: false
+    default: "${{ github.repository }}"
   bot-label:
     description: 'The label name used by the script to manage issues, all issues using this label will be managed'
     required: true
@@ -43,7 +47,7 @@ runs:
     - ${{ inputs.ignored-paths }}
     - ${{ inputs.translation-paths }}
     - ${{ inputs.file-suffix }}
-    - ${{ github.repository }}
+    - ${{ inputs.repository }}
     - ${{ inputs.bot-label }}
     - ${{ inputs.token }}
     - ${{ inputs.log-level }}
