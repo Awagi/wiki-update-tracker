@@ -6,6 +6,7 @@ from os import environ
 import json
 import sys
 from git import Repo
+import re
 
 
 GITHUB_API_URL = "https://api.github.com"
