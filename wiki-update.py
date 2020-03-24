@@ -330,7 +330,7 @@ def fetch_status_local(git_repo, original_path, translation_paths, original_blac
                                     # base original and latest original page are the same, translation page is up-to-date
                                     log.debug("{} is UP-TO-DATE".format(trapath))
                                     status = Status.UTD
-                            except:
+                            except KeyError:
                                 # corresponding original page didn't exist at translation page creation, then the latter was just created but has to be initialized now
                                 log.debug("{} has TO BE INITIALIZED".format(trapath))
                                 status = Status.TBI
@@ -348,7 +348,13 @@ def fetch_status_local(git_repo, original_path, translation_paths, original_blac
                                 deletions = 0
                                 lines = 0
                                 for c in repo.iter_commits(oldcommit, paths=ori.path):
-                                    stats = c.stats.files[ori.path]
+                                    try:
+                                        # when the file has not been renamed, key in Stats is typically "my/path/myfilename.md"
+                                        stats = c.stats.files[ori.path]
+                                    except KeyError:
+                                        # when the file has been renamed, key in Stats is something like "my/path/{oldname.md => myfilename.md}"
+                                        stats = [(path, value) for path, value in c.stats.files.items() if re.match("{}{{.* => {}}}".format(ori.path[:-len(ori.name)], ori.name), path)][0][1]
+
                                     insertions = insertions + stats["insertions"]
                                     deletions = deletions + stats["deletions"]
                                     lines = lines + stats["lines"]
