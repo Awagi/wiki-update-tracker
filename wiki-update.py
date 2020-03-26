@@ -348,17 +348,6 @@ def fetch_status_local(git_repo, original_path, translation_paths, original_blac
                                 insertions = diff.diff.count(b"\n+")
                                 deletions = diff.diff.count(b"\n-")
                                 lines = insertions + deletions
-                                for c in repo.iter_commits(oldcommit, paths=ori.path):
-                                    try:
-                                        # when the file has not been renamed, key in Stats is typically "my/path/myfilename.md"
-                                        stats = c.stats.files[ori.path]
-                                    except KeyError:
-                                        # when the file has been renamed, key in Stats is something like "my/path/{oldname.md => myfilename.md}"
-                                        stats = [(path, value) for path, value in c.stats.files.items() if re.match("{}{{.* => {}}}".format(ori.path[:-len(ori.name)], ori.name), path)][0][1]
-
-                                    insertions = insertions + stats["insertions"]
-                                    deletions = deletions + stats["deletions"]
-                                    lines = lines + stats["lines"]
 
                         o = {
                             "translation": {
