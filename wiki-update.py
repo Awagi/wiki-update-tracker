@@ -421,12 +421,11 @@ def update_issues(token, files_status, repo, bot_label):
         # forge Github URLs, be aware they can't be used in every contexts
         tr_url = "{}/{}/blob/{}/{}".format(GITHUB_URL, repo, status["context"]["branch"], tr_path)
         or_url = "{}/{}/blob/{}/{}".format(GITHUB_URL, repo, status["original"]["lastcommit"], status["original"]["path"])
-        compare_url = "{}/{}/compare/{}...{}#files_bucket".format(GITHUB_URL, repo, status["translation"]["commit"], status["original"]["lastcommit"])
-        oldori_raw_url = "{}/{}/raw/{}/{}".format(GITHUB_URL, repo, status["translation"]["commit"], status["original"]["path"])
-        ori_raw_url = "{}/{}/raw/{}/{}".format(GITHUB_URL, repo, status["original"]["lastcommit"], status["original"]["path"])
         # build body
         if status["translation"]["status"] is Status.Update:
-            
+            compare_url = "{}/{}/compare/{}...{}#files_bucket".format(GITHUB_URL, repo, status["translation"]["commit"], status["original"]["lastcommit"])
+            oldori_raw_url = "{}/{}/raw/{}/{}".format(GITHUB_URL, repo, status["translation"]["commit"], status["original"]["path"])
+            ori_raw_url = "{}/{}/raw/{}/{}".format(GITHUB_URL, repo, status["original"]["lastcommit"], status["original"]["path"])
             body = (
                 '## :bookmark_tabs: Translation update\n'
                 'Since **`{o[translation][path]}`** was last updated, changes have been detected in the original wiki page `{o[original][path]}` it is based on.\n'
