@@ -345,9 +345,9 @@ def fetch_status_local(git_repo, original_path, translation_paths, original_blac
                                 diff = oldcommit.diff(paths=ori.path, create_patch=True)[0]
                                 patch = diff.diff
                                 # get additions, deletions and changes
-                                insertions = 0
-                                deletions = 0
-                                lines = 0
+                                insertions = diff.diff.count(b"\n+")
+                                deletions = diff.diff.count(b"\n-")
+                                lines = insertions + deletions
                                 for c in repo.iter_commits(oldcommit, paths=ori.path):
                                     try:
                                         # when the file has not been renamed, key in Stats is typically "my/path/myfilename.md"
