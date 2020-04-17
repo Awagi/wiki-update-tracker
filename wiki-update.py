@@ -305,7 +305,7 @@ def update_issues(token, files_status, repo, bot_label):
         elif status["translation"]["status"] is Status.UTD:
             body = (
                 '## :heavy_check_mark: Nothing to do\n'
-                'Thanks to your involvement, {o[translation][path]} is up-to-date! :1st_place_medal:\n'
+                'Thanks to your involvement, `{o[translation][path]}` is up-to-date! :1st_place_medal:\n'
                 '\n'
                 'Let\'s keep it that way for every wiki pages!\n'
             ).format(o=status)
