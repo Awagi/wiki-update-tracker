@@ -16,7 +16,7 @@ GITHUB_RAW_URL = "https://raw.githubusercontent.com"
 
 # Frontmatter Metadata key and value that, found in translation pages headers, tells WUT the page has not been initialized
 HEADER_TBI_KEY = "translation-done"
-HEADER_TBI_VALUE = "false"
+HEADER_TBI_VALUE = False
 
 
 @unique
