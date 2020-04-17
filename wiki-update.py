@@ -1,5 +1,4 @@
 import requests
-#from urllib.parse import quote
 from enum import Enum, unique
 import logging as log
 from os import environ
@@ -12,35 +11,6 @@ import re
 GITHUB_API_URL = "https://api.github.com"
 GITHUB_URL = "https://github.com"
 GITHUB_RAW_URL = "https://raw.githubusercontent.com"
-#ISSUE_TITLE_FORMAT = "Translation update required on {}"
-#ISSUE_TBC_LABEL = "translation:init"
-#ISSUE_UPDATE_LABEL = "translation:update"
-#ISSUE_UTD_LABEL = "translation:ok"
-
-#FILE_SUFFIX = ".md"
-
-# OFFICIAL Github repo and branch variables
-#OF_AUTHOR = "beat-saber-modding-group"
-#OF_REPO = "wiki"
-#OF_BRANCH = "master"
-
-# TRANSLATION Github repo and branch variables
-#TR_AUTHOR = "Awagi"
-#TR_REPO = "wiki"
-#TR_BRANCH = "frtranslation"
-
-# ORIGINAL files variables
-#OR_FILES_PATH = "wiki"
-#OR_FILES_BLACKLIST = ["wiki/.vuepress", "wiki/fr"]
-
-# TRANSLATED files variables
-#TR_FILES_PATH = "wiki/fr"
-#TR_FILES_BLACKLIST = []
-
-# Github Issues variables
-#ISSUE_BOT_LABEL = "WUT"
-
-
 
 
 @unique
@@ -106,151 +76,6 @@ def call_api(method, path, token, json={}, headers={}):
             uri = None
 
     return ret
-
-#def fetch_status_api(of_author, of_repo, of_branch, tr_author, tr_repo, tr_branch, or_files_path, tr_files_path, or_files_blacklist=[], tr_files_blacklist=[], file_suffixes=[".md"]):
-#    """
-#    Fetch information from Github using Github API to track changes within original files, used as basis for translated files.
-#
-#    While we differenciate two Github repositories/branches, they must have the particular
-#    same structure to store the original files.
-#    There are:
-#        - the official repository, where original files are considered up-to-date.
-#        - the translation repository, where translated files are being built.
-#
-#    About the different files, each representing 1 Wiki page:
-#        - the original files, which are used as basis for translated files.
-#        - the translated files, which are simply translations of original files, nothing more.
-#
-#    Original files and translated files must follow the same file structure and terminology within
-#    their own folder described as ``or_files_path`` and ``tr_files_path``
-#
-#    The function do the following:
-#        1. Fetch original wiki files and check for matching translated files.
-#        2. Check if any translated file requires changes.
-#        2.1. Get the commit where the translated file was lastly updated.
-#        2.2. Compare the original file from that commit to the lately commited original file.
-#
-#    :param of_author: the official repository author
-#    :param of_repo: the official repository with the up-to-date original files
-#    :param of_branch: the branch on the official repository with the up-to-date original files
-#    :param tr_author: the translation repository author
-#    :param tr_repo: the translation repository with the work in progress translated files
-#    :param tr_branch: the branch on the translation repository with the work in progress translated files
-#    :param or_files_path: the path of the original files, must be the same on both the translation repository and the official repository
-#    :param tr_files_path: the path of the translated files within the translation repository
-#    :param or_files_blacklist: a list of untracked original files represented as stringed paths
-#    :param tr_files_blacklist: a list of untracked translated files represented as stringed paths
-#    :param file_suffixes: the suffixes file for tracked files (generally wiki pages from vuepress are .md files)
-#
-#    :return: a list of translated file, with their Status and links to compare base original files and head original files
-#    
-#    :example:
-#    [
-#        {
-#            "translation": {
-#                "path": "wiki/fr/README.md",
-#                "url": "https://github.com/Awagi/wiki/blob/frtranslation/wiki/fr/README.md",
-#                "commit": "1b7275d387b3ac6cf2e2cf9389e576ca1e470107",
-#                "status": "UPDATE"
-#            },
-#            "original": {
-#                "path": "wiki/README.md",
-#                "sha": "1e71ef0a8f23b514c2621a4305eaa0904f33741b",
-#                "compare_url": "https://github.com/beat-saber-modding-group/wiki/compare/1b7275d387b3ac6cf2e2cf9389e576ca1e470107...beat-saber-modding-group:master",
-#                "url": "https://github.com/beat-saber-modding-group/wiki/blob/68a959f23e324ae85dea5742b2e11093cdc14e2a/wiki/README.md",
-#                "old_url": "https://github.com/beat-saber-modding-group/wiki/blob/1b7275d387b3ac6cf2e2cf9389e576ca1e470107/wiki/README.md",
-#                "raw_url": "https://github.com/beat-saber-modding-group/wiki/raw/68a959f23e324ae85dea5742b2e11093cdc14e2a/wiki/README.md",
-#                "old_raw_url": "https://raw.githubusercontent.com/beat-saber-modding-group/wiki/1b7275d387b3ac6cf2e2cf9389e576ca1e470107/wiki/README.md",
-#                "patch": "@@ -37,7 +37,7 @@ footer: Copyright \u00a9 2019 Beat Saber Modding Group | Licensed under CC BY-NC-SA\n * [BeatMods](https://beatmods.com) - Repository of mods that are reflected in installers like ModAssistant\n * [BeatSaver](https://beatsaver.com/) - Download custom songs here\n * [BeastSaber](https://bsaber.com/) - Reviews, articles, playlists, and more!\n-* [ModelSaber](https://modelsaber.com/) - Download custom sabers, avatars, and platforms!\n+* [ModelSaber](https://modelsaber.com/) - Download custom sabers, avatars, blocks, and platforms!\n * [ScoreSaber](https://scoresaber.com/) - Custom leaderboards\n * [Steam Store Page](https://store.steampowered.com/app/620980/Beat_Saber/)\n * [Oculus Store Page](https://www.oculus.com/experiences/rift/1304877726278670/)",
-#                "additions": 1,
-#                "deletions": 1,
-#                "changes": 2
-#            }
-#        }
-#    ]
-#    """
-#    # Fetch most recent original wiki files from the official up-to-date repo and branch
-#    log.info("Fetching head original wiki files from Github")
-#    dir_url = "{}/repos/{}/{}/contents/{}?ref={}".format(GITHUB_API_URL, of_author, of_repo, or_files_path, of_branch)
-#    head_or_files = fetch_files_api(dir_url, file_suffixes, or_files_blacklist)
-#
-#    nb_files = len(head_or_files)
-#    log.debug("{} head original files found in the official repo".format(nb_files))
-#
-#    cnt_tbc = 0
-#    cnt_update = 0
-#    cnt_utd = 0
-#    cnt_tbi = 0
-#
-#    # Fetch every translated files based on the original files
-#    files = []
-#    cnt = 0
-#    for or_file in head_or_files:
-#        cnt = cnt + 1
-#        or_path = or_file["path"]
-#        tr_path = or_to_tr_path(or_path)
-#        f = {
-#            "translation": {
-#                "path": tr_path,
-#                "url": "{}/{}/{}/blob/{}/{}".format(GITHUB_URL, tr_author, tr_repo, tr_branch, tr_path)
-#            },
-#            "original": {
-#                "path": or_path,
-#                "sha": or_file["sha"]
-#            }
-#        }
-#
-#        log.info("[{}/{}] Comparing base original file to head original file from {}".format(cnt, nb_files, tr_path))
-#
-#        log.debug("Get last commit updating translated file {}".format(tr_path))
-#        res = call_api(Method.GET, "{}/repos/{}/{}/commits?sha={}&path={}".format(GITHUB_API_URL, tr_author, tr_repo, tr_branch, quote(tr_path, safe='')))
-#        if len(res) == 0:
-#            # no commit means the file doesn't exist
-#            f["translation"]["status"] = Status.TBC
-#            cnt_tbc = cnt_tbc + 1
-#        else:
-#            tr_commit = res[0]["sha"]
-#            f["translation"]["commit"] = tr_commit
-#            f["original"]["compare_url"] = "{}/{}/{}/compare/{}...{}:{}".format(GITHUB_URL, of_author, of_repo, tr_commit, of_author, of_branch)
-#
-#            # compare from translation commit to today's up-to-date head files
-#            log.debug("Compare original file {} to head file".format(or_path))
-#            res = call_api(Method.GET, "{}/repos/{}/{}/compare/{}...{}:{}".format(GITHUB_API_URL, of_author, of_repo, tr_commit, of_author, of_branch))
-#
-#            # find the original file in the comparison
-#            or_comp = next((x for x in res["files"] if x["filename"] == or_path), None)
-#
-#            if or_comp is None:
-#                # original file not found in comparison: means it hasn't been updated
-#                f["translation"]["status"] = Status.UTD
-#                cnt_utd = cnt_utd + 1
-#            elif or_comp["status"] == "added":
-#                # original file recently added, the translated file must be either initialized (although already created)
-#                f["translation"]["status"] = Status.TBI
-#                cnt_tbi = cnt_tbi + 1
-#                f["original"]["url"] = or_comp["blob_url"]
-#                f["original"]["raw_url"] = or_comp["raw_url"]
-#            elif or_comp["status"] == "modified":
-#                # original file found with modifications
-#                f["translation"]["status"] = Status.Update
-#                cnt_update = cnt_update + 1
-#                f["original"]["url"] = or_comp["blob_url"]
-#                f["original"]["old_url"] = "{}/{}/{}/blob/{}/{}".format(GITHUB_URL, OF_AUTHOR, OF_REPO, f["translation"]["commit"], f["original"]["path"])
-#                f["original"]["raw_url"] = or_comp["raw_url"]
-#                f["original"]["old_raw_url"] = "{}/{}/{}/{}/{}".format(GITHUB_RAW_URL, OF_AUTHOR, OF_REPO, f["translation"]["commit"], f["original"]["path"])
-#                f["original"]["patch"] = or_comp["patch"]
-#                f["original"]["additions"] = or_comp["additions"]
-#                f["original"]["deletions"] = or_comp["deletions"]
-#                f["original"]["changes"] = or_comp["changes"]
-#
-#            files.append(f)
-#
-#    log.info("{} files to create and initialize".format(cnt_tbc))
-#    log.info("{} files to initialize".format(cnt_tbi))
-#    log.info("{} files to update".format(cnt_update))
-#    log.info("{} files up-to-date".format(cnt_utd))
-#
-#    return files
 
 
 def fetch_status_local(git_repo, original_path, translation_paths, original_blacklist=[], file_suffixes=[".md"]):
@@ -559,17 +384,6 @@ if __name__ == '__main__':
         translation_paths = translation_paths.split(',')
 
     log.info("Started fetching Wiki pages status.")
-    #tr_files = fetch_status_api(of_author=OF_AUTHOR,
-    #                            of_repo=OF_REPO,
-    #                            of_branch=OF_BRANCH,
-    #                            tr_author=TR_AUTHOR,
-    #                            tr_repo=TR_REPO,
-    #                            tr_branch=TR_BRANCH,
-    #                            or_files_path=OR_FILES_PATH,
-    #                            tr_files_path=TR_FILES_PATH,
-    #                            or_files_blacklist=OR_FILES_BLACKLIST,
-    #                            tr_files_blacklist=TR_FILES_BLACKLIST,
-    #                            file_suffixes=[FILE_SUFFIX])
     tr_files = fetch_status_local(git_repo=repo_path,
                                   original_path=original_path,
                                   translation_paths=translation_paths,
