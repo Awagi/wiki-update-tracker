@@ -12,6 +12,14 @@ Here's the target workflow:
 
 It requires a local repository (use [checkout](https://github.com/actions/checkout)) on the active branch you want to check and multiple inputs.
 
+New in v1.5: set the Frontmatter header `translation-done: false` in a markdown translation file to tell the script the page has not been initialized yet.
+
+```yml
+---
+translation-done: false
+---
+```
+
 ## Inputs
 
 **`repo-path`**

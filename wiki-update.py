@@ -6,11 +6,17 @@ import json
 import sys
 from git import Repo
 import re
+import frontmatter
+from yaml.scanner import ScannerError
 
 
 GITHUB_API_URL = "https://api.github.com"
 GITHUB_URL = "https://github.com"
 GITHUB_RAW_URL = "https://raw.githubusercontent.com"
+
+# Frontmatter Metadata key and value that, found in translation pages headers, tells WUT the page has not been initialized
+HEADER_TBI_KEY = "translation-done"
+HEADER_TBI_VALUE = "false"
 
 
 @unique
@@ -152,27 +158,35 @@ def fetch_status_local(git_repo, original_path, translation_paths, original_blac
                             try:
                                 # get base (old) original file from this commit
                                 oldori = oldcommit.tree[ori.path]
-                                if oldori.binsha == ori.binsha:
-                                    # base original and latest original page are the same, translation page is up-to-date
-                                    log.debug("{} is UP-TO-DATE".format(trapath))
-                                    status = Status.UTD
+                                # checking translation page's header: if it tells us it is not initialized yet, don't go further in checking original page changes
+                                post = frontmatter.loads(tra.data_stream.read())
+                                if HEADER_TBI_KEY in post and post[HEADER_TBI_KEY] == HEADER_TBI_VALUE:
+                                    log.debug("{} has TO BE INITIALIZED (found user defined header)".format(trapath))
+                                    status = Status.TBI
                             except KeyError:
                                 # corresponding original page didn't exist at translation page creation, then the latter was just created but has to be initialized now
                                 log.debug("{} has TO BE INITIALIZED".format(trapath))
                                 status = Status.TBI
+                            except ScannerError:
+                                pass
 
                             if status is None:
-                                # there we know base original and latest original pages have a difference
-                                log.debug("{} has to be UPDATED, getting diff".format(trapath))
-                                status = Status.Update
+                                if oldori.binsha == ori.binsha:
+                                    # base original and latest original page are the same, translation page is up-to-date
+                                    log.debug("{} is UP-TO-DATE".format(trapath))
+                                    status = Status.UTD
+                                else:
+                                    # there we know base original and latest original pages have a difference
+                                    log.debug("{} has to be UPDATED, getting diff".format(trapath))
+                                    status = Status.Update
 
-                                # get diff to get applied patch
-                                diff = oldcommit.diff(paths=ori.path, create_patch=True)[0]
-                                patch = diff.diff
-                                # get additions, deletions and changes
-                                insertions = diff.diff.count(b"\n+")
-                                deletions = diff.diff.count(b"\n-")
-                                lines = insertions + deletions
+                                    # get diff to get applied patch
+                                    diff = oldcommit.diff(paths=ori.path, create_patch=True)[0]
+                                    patch = diff.diff
+                                    # get additions, deletions and changes
+                                    insertions = diff.diff.count(b"\n+")
+                                    deletions = diff.diff.count(b"\n-")
+                                    lines = insertions + deletions
 
                         o = {
                             "translation": {
