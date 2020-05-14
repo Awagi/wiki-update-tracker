@@ -29,12 +29,12 @@ STUB_PAGE_CONTENT = ('---\n'
 '---\n'
 '::: danger\n'
 'Sorry, this page has not been translated yet, you can either:\n'
-'- refer to the [original English version]({link_original_page}),\n'
-'- wait for a translation to be done\n'
-'- contribute to translation effort [here](https://github.com/bsmg/wiki)\n'
+'- refer to the [original English version](<{link_original_page}>),\n'
+'- wait for a translation to be done,\n'
+'- or contribute to translation effort [here](https://github.com/bsmg/wiki).\n'
 ':::\n'
 '\n'
-'_Note for translators: this page was generated automatically, please remove everything before starting translation_\n'
+'_Note for translators: this page was generated automatically, please remove this content before starting translation_\n'
 )
 
 # Issue body message format and title
