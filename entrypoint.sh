@@ -11,7 +11,7 @@
 # 9: log level (DEBUG, INFO, WARNING or CRITICAL)
 # 10: auto create (true, false)
 result=$(python /usr/src/app/wiki-update.py $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10})
-if [ $result == 0 ]; then
+if [ $result = 0 ]; then
     echo "Script failed"
     exit 1
 fi

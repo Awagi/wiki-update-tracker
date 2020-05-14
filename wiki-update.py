@@ -28,11 +28,13 @@ STUB_PAGE_CONTENT = ('---\n'
 'translation-done: false\n'
 '---\n'
 '::: danger\n'
-'Sorry, this page has not been translated yet, either:\n'
+'Sorry, this page has not been translated yet, you can either:\n'
 '- refer to the [original English version]({link_original_page}),\n'
 '- wait for a translation to be done\n'
 '- contribute to translation effort [here](https://github.com/bsmg/wiki)\n'
 ':::\n'
+'\n'
+'_Note for translators: this page was generated automatically, please remove everything before starting translation_\n'
 )
 
 # Issue body message format and title
@@ -314,7 +316,7 @@ def create_stubs(git_repo, files_status):
     for tr_file in files_status:
         if tr_file["translation"]["status"] is Status.TBC:
             log.debug("Auto creating TBC {}".format(tr_file["translation"]["path"]))
-            files.append(tr_file["path"])
+            files.append(tr_file["original"]["path"])
             # create file
             content = STUB_PAGE_CONTENT.format(link_original_page=tr_file["original"]["rpath"])
             filepath = os.path.join(repo.working_tree_dir, tr_file["translation"]["path"])
