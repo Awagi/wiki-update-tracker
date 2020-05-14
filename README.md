@@ -12,6 +12,8 @@ Here's the target workflow:
 
 It requires a local repository (use [checkout](https://github.com/actions/checkout)) on the active branch you want to check and multiple inputs.
 
+New in v1.6: Wiki Update Tracker now automatically creates stub files when missing, with the correct header. Can be enabled or disabled.
+
 New in v1.5: set the Frontmatter header `translation-done: false` in a markdown translation file to tell the script the page has not been initialized yet.
 
 ```yml
@@ -78,6 +80,13 @@ The Python script's log level. It can be `DEBUG`, `INFO`, `WARNING` or `CRITICAL
 
 [More info](https://docs.python.org/3/library/logging.html).
 
+**`auto-create`**
+
+Allow automatic creation of files that need to be created, with a preset body containing the header `translation-done: false` meaning the page has not been initialized.
+It can be `true`, `1`, `yes` to enable auto create or `false`, `0`, `no` to disable auto create.
+
+The Action will commit through git and push to Github repo on the same branch.
+
 ## Outputs
 
 **`translation-status`**
@@ -92,12 +101,12 @@ The status can be:
 
 Example: `wiki/fr/README.md:UPDATE,wiki/fr/beginners-guide.md:UTD`
 
-
 **`open-issues`**
 
-Comma-separated list containing the issue numbers which are open (when a file requires updating, creation or initialization).
+Comma-separated list containing open issue numbers (when a file requires updating, creation or initialization).
 
 Example: `65,67,70`
+
 
 ## How it works
 

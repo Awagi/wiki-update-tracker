@@ -1,10 +1,10 @@
 import requests
 from enum import Enum, unique
 import logging as log
-from os import environ
+import os
 import json
 import sys
-from git import Repo
+from git import Repo, Actor
 import re
 import frontmatter
 from yaml.scanner import ScannerError
@@ -17,6 +17,74 @@ GITHUB_RAW_URL = "https://raw.githubusercontent.com"
 # Frontmatter Metadata key and value that, found in translation pages headers, tells WUT the page has not been initialized
 HEADER_TBI_KEY = "translation-done"
 HEADER_TBI_VALUE = False
+
+GIT_AUTHOR = "Wiki Update Tracker"
+GIT_AUTHOR_EMAIL = "awagi@pm.me"
+GIT_COMMITTER = "Wiki Update Tracker"
+GIT_COMMITTER_EMAIL = "awagi@pm.me"
+
+STUB_COMMIT_MSG = ":tada: Creating stub translation pages"
+STUB_PAGE_CONTENT = ('---\n'
+'translation-done: false\n'
+'---\n'
+'::: danger\n'
+'Sorry, this page has not been translated yet, either:\n'
+'- refer to the [original English version]({link_original_page}),\n'
+'- wait for a translation to be done\n'
+'- contribute to translation effort [here](https://github.com/bsmg/wiki)\n'
+':::\n'
+)
+
+# Issue body message format and title
+ISSUE_TITLE = "Translation page: {translation_path}"
+ISSUE_BODY_UPDATE = (
+    '## :bookmark_tabs: Translation update\n'
+    'Since **`{o[translation][path]}`** was last updated, changes have been detected in the original wiki page `{o[original][path]}` it is based on.\n'
+    '\n'
+    'Please update **[the translation here]({tr_url})** accordingly, respecting contribution guidelines.\n'
+    '\n'
+    '### :bar_chart: Workload\n'
+    '\n'
+    'Calculated changes made to the original file `{o[original][path]}` (as lines):\n'
+    '\n'
+    '```diff\n'
+    '+ {o[original][additions]} additions\n'
+    '- {o[original][deletions]} deletions\n'
+    '! {o[original][changes]} total lines updated\n'
+    '```\n'
+    '\n'
+    '### :wrench: Translation tools\n'
+    '\n'
+    'You can choose one of the following options to help you see what changed:\n'
+    '1. Use this [Github comparison]({compare_url}) and find the comparison on the file **`{o[original][path]}`**.\n'
+    '2. OR use [Diffchecker web version](https://www.diffchecker.com/). Copy/paste [this original text]({oldori_raw_url}) in the left field and [this changed text]({ori_raw_url}) in the right field, then press "Find Difference".\n'
+    '3. OR simply use the detailed patch below.\n'
+    '\n'
+    'Detailed additions and deletions on `{o[original][path]}`:\n'
+    '```diff\n'
+    '{o[original][patch]}\n'
+    '```\n'
+)
+ISSUE_BODY_TBC = (
+    '## :page_facing_up: Translation creation & initialization\n'
+    'A new original wiki page has been detected: `{o[original][path]}`. It has no associated translation yet.\n'
+    '\n'
+    'Please create the file **{o[translation][path]}** and initialize the translation based on the [original English version]({or_url}).\n'
+)
+ISSUE_BODY_TBI = (
+    '## :page_facing_up: Translation initialization\n'
+    'A new original wiki page has been detected: `{o[original][path]}`. It has no associated translation yet (though the file `{o[translation][path]}` already exists).\n'
+    '\n'
+    'Please **[initialize the translation here]({tr_url})**. Base your translation on the [original English version]({or_url}).\n'
+)
+ISSUE_BODY_UTD = (
+    '## :heavy_check_mark: Nothing to do\n'
+    'Thanks to your involvement, `{o[translation][path]}` is up-to-date! :1st_place_medal:\n'
+    '\n'
+    'Let\'s keep it that way for every wiki pages!\n'
+)
+ISSUE_BODY_BUG = ':bug: This is an unexpected issue description, I\'m probably broken. Please report this bug to some maintainer.\n'
+
 
 
 @unique
@@ -112,6 +180,7 @@ def fetch_status_local(git_repo, original_path, translation_paths, original_blac
             },
             "original": {
                 "path": "wiki/README.md",
+                "rpath": "/README.md",
                 "lastsha": "1e71ef0a8f23b514c2621a4305eaa0904f33741b",
                 "lastcommit": "65ad3ad66e9513bbab7d09ed666c5198271e1508",
                 "oldsha": "4c08158aa90ffeb3d10dcb2f06728acdcd92b31e",
@@ -195,6 +264,7 @@ def fetch_status_local(git_repo, original_path, translation_paths, original_blac
                             },
                             "original": {
                                 "path": ori.path,
+                                "rpath": ori.path[len(original_path):],
                                 "lastsha": ori.hexsha,
                                 "lastcommit": repo.active_branch.commit.hexsha
                             },
@@ -220,6 +290,60 @@ def fetch_status_local(git_repo, original_path, translation_paths, original_blac
     return ret
 
 
+def create_stubs(git_repo, files_status):
+    """
+    Automatically create stub translation pages with the header `translation-done: false` for To Be Created ones (Status.TBC).
+
+    Useful when adding new language to the job, and to get notified when a new original page is created.
+
+    REQUIRES the Github App to have Contents read/write access.
+
+    Changes files_status from TBC to TBI after creating files.
+
+    :param token: the Github App token, with read/write access to contents
+    :param files_status: a list of files with their translation status (format must match fetch_status_local return)
+    :param repo: the remote repository on which to update the pull request, such as 'Author/Repo'
+    :param bot_label: the bot Github label placed on the pull request to keep an eye on, won't see other PR
+    """
+    repo = Repo(git_repo)
+
+    # clean index
+
+    log.debug("Checking To Be Created translation pages")
+    files = []
+    for tr_file in files_status:
+        if tr_file["translation"]["status"] is Status.TBC:
+            log.debug("Auto creating TBC {}".format(tr_file["translation"]["path"]))
+            files.append(tr_file["path"])
+            # create file
+            content = STUB_PAGE_CONTENT.format(link_original_page=tr_file["original"]["rpath"])
+            filepath = os.path.join(repo.working_tree_dir, tr_file["translation"]["path"])
+            os.makedirs(os.path.dirname(filepath), exist_ok=True)
+            with open(filepath, 'w') as f:
+                f.write(content)
+
+    if len(files) > 0:
+        # add to index
+        repo.index.add(files)
+        # git commit
+        log.debug("Committing created stub pages")
+        author = Actor(GIT_AUTHOR, GIT_AUTHOR_EMAIL)
+        committer = Actor(GIT_COMMITTER, GIT_COMMITTER_EMAIL)
+        commit = repo.index.commit(STUB_COMMIT_MSG, author=author, committer=committer)
+        # git push
+        log.debug("Pushing changes")
+        origin = repo.remote(name='origin')
+        origin.push()
+
+        # putting TBC to same level of info than TBI
+        for tr_file in files_status:
+            if tr_file["translation"]["status"] is Status.TBC:
+                tr_file["translation"]["status"] = Status.TBI
+                tr_file["translation"]["sha"] = commit.tree[tr_file["translation"]["path"]].hexshas
+                tr_file["translation"]["commit"] = commit.hexsha
+
+
+
 def update_issues(token, files_status, repo, bot_label):
     """
     Update issues on Github according to the given files status.
@@ -227,6 +351,8 @@ def update_issues(token, files_status, repo, bot_label):
     The idea is to have an issue per translation page to track:
         - open issues for translated pages to update, to create and to initialize
         - closed issues for up-to-date translated pages
+    
+    REQUIRES the Github App to have read/write access to issues.
 
     :param token: the Github App token, with read/write access to issues
     :param files_status: a list of files with their translation status (format must match fetch_status_local return)
@@ -254,70 +380,28 @@ def update_issues(token, files_status, repo, bot_label):
             compare_url = "{}/{}/compare/{}...{}#files_bucket".format(GITHUB_URL, repo, status["translation"]["commit"], status["original"]["lastcommit"])
             oldori_raw_url = "{}/{}/raw/{}/{}".format(GITHUB_URL, repo, status["translation"]["commit"], status["original"]["path"])
             ori_raw_url = "{}/{}/raw/{}/{}".format(GITHUB_URL, repo, status["original"]["lastcommit"], status["original"]["path"])
-            body = (
-                '## :bookmark_tabs: Translation update\n'
-                'Since **`{o[translation][path]}`** was last updated, changes have been detected in the original wiki page `{o[original][path]}` it is based on.\n'
-                '\n'
-                'Please update **[the translation here]({tr_url})** accordingly, respecting contribution guidelines.\n'
-                '\n'
-                '### :bar_chart: Workload\n'
-                '\n'
-                'Calculated changes made to the original file `{o[original][path]}` (as lines):\n'
-                '\n'
-                '```diff\n'
-                '+ {o[original][additions]} additions\n'
-                '- {o[original][deletions]} deletions\n'
-                '! {o[original][changes]} total lines updated\n'
-                '```\n'
-                '\n'
-                '### :wrench: Translation tools\n'
-                '\n'
-                'You can choose one of the following options to help you see what changed:\n'
-                '1. Use this [Github comparison]({compare_url}) and find the comparison on the file **`{o[original][path]}`**.\n'
-                '2. OR use [Diffchecker web version](https://www.diffchecker.com/). Copy/paste [this original text]({oldori_raw_url}) in the left field and [this changed text]({ori_raw_url}) in the right field, then press "Find Difference".\n'
-                '3. OR simply use the detailed patch below.\n'
-                '\n'
-                'Detailed additions and deletions on `{o[original][path]}`:\n'
-                '```diff\n'
-                '{o[original][patch]}\n'
-                '```\n'
-            ).format(o=status, tr_url=tr_url, compare_url=compare_url, oldori_raw_url=oldori_raw_url, ori_raw_url=ori_raw_url)
+            body = ISSUE_BODY_UPDATE.format(o=status, tr_url=tr_url, compare_url=compare_url, oldori_raw_url=oldori_raw_url, ori_raw_url=ori_raw_url)
             label = "translation:update"
             state = "open"
         elif status["translation"]["status"] is Status.TBC:
-            body = (
-                '## :page_facing_up: Translation creation & initialization\n'
-                'A new original wiki page has been detected: `{o[original][path]}`. It has no associated translation yet.\n'
-                '\n'
-                'Please create the file **{o[translation][path]}** and initialize the translation based on the [original English version]({or_url}).\n'
-            ).format(o=status, or_url=or_url)
+            body = ISSUE_BODY_TBC.format(o=status, or_url=or_url)
             label = "translation:new"
             state = "open"
         elif status["translation"]["status"] is Status.TBI:
-            body = (
-                '## :page_facing_up: Translation initialization\n'
-                'A new original wiki page has been detected: `{o[original][path]}`. It has no associated translation yet (though the file `{o[translation][path]}` already exists).\n'
-                '\n'
-                'Please **[initialize the translation here]({tr_url})**. Base your translation on the [original English version]({or_url}).\n'
-            ).format(o=status, tr_url=tr_url, or_url=or_url)
+            body = ISSUE_BODY_TBI.format(o=status, tr_url=tr_url, or_url=or_url)
             label = "translation:new"
             state = "open"
         elif status["translation"]["status"] is Status.UTD:
-            body = (
-                '## :heavy_check_mark: Nothing to do\n'
-                'Thanks to your involvement, `{o[translation][path]}` is up-to-date! :1st_place_medal:\n'
-                '\n'
-                'Let\'s keep it that way for every wiki pages!\n'
-            ).format(o=status)
+            body = ISSUE_BODY_UTD.format(o=status)
             label = "translation:ok"
             state = "closed"
         else:
             log.warning("Unexpected behaviour detected.")
-            body = ':bug: This is an unexpected issue description, I\'m probably broken. Please report this bug to some maintainer.\n'
+            body = ISSUE_BODY_BUG
             label = "bug"
             state = "closed"
 
-        title = "Translation page: {}".format(tr_path)
+        title = ISSUE_TITLE.format(translation_path=tr_path)
         issue_finder = (issue for issue in issues if issue["title"] == title)
         issue = next(issue_finder, None)
 
@@ -328,7 +412,7 @@ def update_issues(token, files_status, repo, bot_label):
                 "body": body,
                 "labels": [bot_label, label]
             })
-            log.debug("Succesfully created issue {}".format(issue["number"]))
+            log.debug("Successfully created issue {}".format(issue["number"]))
             # closing the created issue afterward if state to 'closed'
             if state == "closed":
                 call_api(Method.PATCH, "/repos/{}/issues/{}".format(repo, issue["number"]), token, json={
@@ -373,7 +457,8 @@ if __name__ == '__main__':
     # 7: bot label
     # 8: token
     # 9: log level ('DEBUG', 'INFO', 'WARNING' or 'CRITICAL')
-    if len(sys.argv) < 10:
+    # 10: auto create enabled ('0' for disabled, '1' for enabled)
+    if len(sys.argv) < 11:
         log.critical("Can't operate without params.")
         exit(1)
 
@@ -387,15 +472,22 @@ if __name__ == '__main__':
     repo = sys.argv[6]
     bot_label = sys.argv[7]
     token = sys.argv[8]
+    auto_create = sys.argv[9]
 
     if len(ignored_paths) == 0:
         ignored_paths = []
     else:
         ignored_paths = ignored_paths.split(',')
     if len(translation_paths) == 0:
-        translations_paths = []
+        translation_paths = []
     else:
         translation_paths = translation_paths.split(',')
+    if auto_create in ['1', 'true', 't', 'yes', 'y']:
+        auto_create = True
+    elif auto_create in ['0', 'false', 'f', 'no', 'n']:
+        auto_create = False
+    else:
+        raise ValueError("auto_create not acceptable, please check its value")
 
     log.info("Started fetching Wiki pages status.")
     tr_files = fetch_status_local(git_repo=repo_path,
@@ -404,6 +496,12 @@ if __name__ == '__main__':
                                   original_blacklist=ignored_paths,
                                   file_suffixes=[file_suffix])
     log.info("Finished fetching Wiki pages status.")
+
+    if auto_create:
+        log.info("Updating stub TBC pages PR.")
+        create_stubs(git_repo=repo_path,
+                     files_status=tr_files)
+        log.info("Finished updating stub TBC pages PR.")
 
     try:
         log.info("Started updating issues on Github.")

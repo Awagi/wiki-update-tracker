@@ -32,6 +32,10 @@ inputs:
     description: 'The python script log level, either DEBUG, INFO, WARNING or ERROR'
     required: false
     default: "INFO"
+  auto-create:
+    description: 'Enable automatic files creation through git'
+    required: false
+    default: 'false'
 
 outputs:
   translation-status: 
@@ -51,3 +55,4 @@ runs:
     - ${{ inputs.bot-label }}
     - ${{ inputs.token }}
     - ${{ inputs.log-level }}
+    - ${{ inputs.auto-create }}
