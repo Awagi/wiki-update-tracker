@@ -309,8 +309,6 @@ def create_stubs(git_repo, files_status):
     """
     repo = Repo(git_repo)
 
-    # clean index
-
     log.debug("Checking To Be Created translation pages")
     files = []
     for tr_file in files_status:
@@ -319,7 +317,7 @@ def create_stubs(git_repo, files_status):
             files.append(tr_file["original"]["path"])
             # create file
             content = STUB_PAGE_CONTENT.format(link_original_page=tr_file["original"]["rpath"])
-            filepath = os.path.join(repo.working_tree_dir, tr_file["translation"]["path"])
+            filepath = os.path.join(repo.working_tree_dir, os.sep.join(tr_file["translation"]["path"].split('/')))
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
             with open(filepath, 'w') as f:
                 f.write(content)
@@ -335,13 +333,15 @@ def create_stubs(git_repo, files_status):
         # git push
         log.debug("Pushing changes")
         origin = repo.remote(name='origin')
-        origin.push()
+        origin.fetch()
+        push = origin.push()
+        log.debug("Push response: {}".format(push[0].summary))
 
         # putting TBC to same level of info than TBI
         for tr_file in files_status:
             if tr_file["translation"]["status"] is Status.TBC:
                 tr_file["translation"]["status"] = Status.TBI
-                tr_file["translation"]["sha"] = commit.tree[tr_file["translation"]["path"]].hexshas
+                tr_file["translation"]["sha"] = commit.tree[tr_file["translation"]["path"]].hexsha
                 tr_file["translation"]["commit"] = commit.hexsha
 
 
