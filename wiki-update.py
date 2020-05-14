@@ -314,7 +314,7 @@ def create_stubs(git_repo, files_status):
     for tr_file in files_status:
         if tr_file["translation"]["status"] is Status.TBC:
             log.debug("Generating TBC {}".format(tr_file["translation"]["path"]))
-            files.append(tr_file["original"]["path"])
+            files.append(tr_file["translation"]["path"])
             # create file
             content = STUB_PAGE_CONTENT.format(link_original_page=tr_file["original"]["rpath"])
             filepath = os.path.join(repo.working_tree_dir, os.sep.join(tr_file["translation"]["path"].split('/')))
