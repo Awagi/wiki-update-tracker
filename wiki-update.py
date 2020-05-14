@@ -313,7 +313,7 @@ def create_stubs(git_repo, files_status):
     files = []
     for tr_file in files_status:
         if tr_file["translation"]["status"] is Status.TBC:
-            log.debug("Auto creating TBC {}".format(tr_file["translation"]["path"]))
+            log.debug("Generating TBC {}".format(tr_file["translation"]["path"]))
             files.append(tr_file["original"]["path"])
             # create file
             content = STUB_PAGE_CONTENT.format(link_original_page=tr_file["original"]["rpath"])
@@ -330,10 +330,10 @@ def create_stubs(git_repo, files_status):
         author = Actor(GIT_AUTHOR, GIT_AUTHOR_EMAIL)
         committer = Actor(GIT_COMMITTER, GIT_COMMITTER_EMAIL)
         commit = repo.index.commit(STUB_COMMIT_MSG, author=author, committer=committer)
+
         # git push
         log.debug("Pushing changes")
         origin = repo.remote(name='origin')
-        origin.fetch()
         push = origin.push()
         log.debug("Push response: {}".format(push[0].summary))
 
