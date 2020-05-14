@@ -472,7 +472,7 @@ if __name__ == '__main__':
     repo = sys.argv[6]
     bot_label = sys.argv[7]
     token = sys.argv[8]
-    auto_create = sys.argv[9]
+    auto_create = sys.argv[10]
 
     if len(ignored_paths) == 0:
         ignored_paths = []
