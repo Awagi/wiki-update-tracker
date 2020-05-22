@@ -5,7 +5,7 @@ WORKDIR /usr/src/app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY wiki-update.py wiki-update.py
+COPY src/* .
 
 COPY entrypoint.sh /entrypoint.sh
 

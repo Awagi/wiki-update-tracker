@@ -1,6 +1,9 @@
-# wiki-update-tracker
+# Update Tracker for Translations
 
-Custom Action for the [BSMG Wiki](https://github.com/beat-saber-modding-group/wiki) to track page updates in issues.
+Don't bother with your localisation when you make a change in a localised file, let this Action automatically backtrack changes and instruct your translators through Github Issues or Github Projects.
+
+Currently, the Update Tracker Action purpose is to serve only the [BSMG Wiki](https://github.com/beat-saber-modding-group/wiki), to track updated English pages and notifying in issues/projects.
+As such, templates are specifically customized for a Wiki using vuepress i18n. It is currently being reviewed to work in more places and localisation structures.
 
 The Action has 2 main features:
 - checking within a local git repository the status of every translation pages based on modifications on their corresponding original pages.
@@ -12,7 +15,10 @@ Here's the target workflow:
 
 It requires a local repository (use [checkout](https://github.com/actions/checkout)) on the active branch you want to check and multiple inputs.
 
-New in v1.6: Wiki Update Tracker now automatically creates stub files when missing, with the correct header. Can be enabled or disabled.
+New in v1.7: Github Projects is supported. Issues can now be enabled and disabled. Script much more stable and adaptable.
+WARNING: `translation-paths` was removed, because paths must now be given with corresponding language tags as described in new input `translations`.
+
+New in v1.6: Update Tracker now automatically creates stub files when missing, with the correct header. Can be enabled or disabled.
 
 New in v1.5: set the Frontmatter header `translation-done: false` in a markdown translation file to tell the script the page has not been initialized yet.
 
@@ -46,13 +52,13 @@ These must be given relatively to the git repo root path.
 
 Example: `wiki/LICENSE,wiki/.vuepress`
 
-**`translation-paths`**
+**`translations`**
 
-The translation pages relative paths. You may have different paths for translation, but each must follow the same structure as the original pages path.
+The translation pages relative paths and their associated language tag. You may have different paths for translation, but each must follow the same structure as the original pages path.
 
-These must be given relatively to the git repo root path.
+These must be given relatively to the git repo root path. Language tags are defined in [RFC 5646](https://tools.ietf.org/html/rfc5646).
 
-Example: `wiki/fr,wiki/jp`
+Example: `fr:wiki/fr,zh:wiki/zh`
 
 **`repository`**
 
@@ -66,11 +72,13 @@ The file suffix (or extension) used to identify Wiki page. Defaults to `.md`.
 
 The Github label used to track managed issues. Issues with this label will be seen by the script, other will be out of scope.
 
+Required when `update-issues` is enabled.
+
 [More info](https://help.github.com/en/github/managing-your-work-on-github/about-labels).
 
 **`token`**
 
-The job's access token, given with `${{ secrets.GITHUB_TOKEN }}`.
+The job's access token, given with `${{ secrets.GITHUB_TOKEN }}` or other means to restrict to least-privilege permissions (recommended).
 
 [More info](https://help.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token).
 
@@ -86,6 +94,16 @@ Allow automatic creation of files that need to be created, with a preset body co
 It can be `true`, `1`, `yes` to enable auto create or `false`, `0`, `no` to disable auto create.
 
 The Action will commit through git and push to Github repo on the same branch.
+
+**`update-issues`**
+
+Enable Github Issues update.
+It can be `true`, `1`, `yes` to enable issues update or `false`, `0`, `no` to disable issues update.
+
+**`update-projects`**
+
+Enable Github Projects update.
+It can be `true`, `1`, `yes` to enable projects update or `false`, `0`, `no` to disable projects update.
 
 ## Outputs
 

@@ -12,8 +12,8 @@ inputs:
     description: 'The relative ignored paths within original path which should not be reviewed (can be files or entire directories), as a comma-separated list, such as "wiki/LICENSE"'
     required: false
     default: ""
-  translation-paths:
-    description: 'The relative paths of translation files in the git repo, matching the original files structure, as a comma-separated list, such as "wiki/fr,wiki/jp"'
+  translations:
+    description: 'The relative paths of translation files in the git repo with their associated language tag and matching the original files structure, as a comma-separated list, such as "fr:wiki/fr,zh:wiki/zh"'
     required: true
   file-suffix:
     description: 'The suffix of wiki pages that will be reviewed'
@@ -34,6 +34,14 @@ inputs:
     default: "INFO"
   auto-create:
     description: 'Enable automatic files creation through git'
+    required: false
+    default: 'false'
+  update-issues:
+    description: 'Enable issues updating to get notified of changes'
+    required: false
+    default: 'false'
+  update-projects:
+    description: 'Enable projects updating to get notified of changes'
     required: false
     default: 'false'
 
