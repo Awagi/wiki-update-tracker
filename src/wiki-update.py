@@ -10,6 +10,7 @@ from constants import GIT_AUTHOR, GIT_AUTHOR_EMAIL, GIT_COMMITTER, GIT_COMMITTER
 from tracker import TranslationTracker, SamePathException, LanguageTagException, Status
 from updater import GithubUpdater
 import templates
+import traceback
 
 
 STUB_COMMIT_MSG = ":tada: Creating stub translation pages"
@@ -262,5 +263,5 @@ if __name__ == '__main__':
 
     except Exception as e:
         log.critical("Got an unexpected error, exiting.")
-        log.debug("Unexpected exception: {}".format(str(e)))
+        log.debug("Unexpected exception: {}".format(traceback.format_exc()))
         exit(1)

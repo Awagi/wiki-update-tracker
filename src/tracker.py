@@ -92,20 +92,20 @@ class TranslationFileInfo(FileInfo):
         - `language`: equivalent language
     """
     def __init__(self, path, lang_tag, blob=None, commit=None):
-        super(path, blob, commit)
+        super().__init__(path, blob, commit)
         self.lang_tag = lang_tag
 
     def __setattr__(self, name, value):
         if name == 'lang_tag':
             try:
-                self.language = RFC5646_LANGUAGE_TAGS[value]
+                super().__setattr__('language', RFC5646_LANGUAGE_TAGS[value])
             except KeyError:
                 raise LanguageTagException()
-            self.lang_tag = value
+            super().__setattr__('lang_tag', value)
         elif name == 'language':
             raise NotImplementedError("can't change language, use lang_tag")
         else:
-            super.__setattr__(name, value)
+            super().__setattr__(name, value)
 
 
 class PatchInfo:
@@ -167,7 +167,7 @@ class TranslationTracker:
             raise ValueError("original file not found")
         if original.type == 'tree':
             treebuffer = [original]
-            ignored = ignore + translation_path
+            ignored = ignore + [translation_path]
             while len(treebuffer) > 0:
                 t = treebuffer.pop()
                 if t.path not in ignored:

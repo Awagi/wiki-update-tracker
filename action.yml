@@ -57,7 +57,7 @@ runs:
     - ${{ inputs.repo-path }}
     - ${{ inputs.original-path }}
     - ${{ inputs.ignored-paths }}
-    - ${{ inputs.translation-paths }}
+    - ${{ inputs.translations }}
     - ${{ inputs.file-suffix }}
     - ${{ inputs.repository }}
     - ${{ inputs.bot-label }}
