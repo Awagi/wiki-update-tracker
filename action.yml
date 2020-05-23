@@ -64,3 +64,5 @@ runs:
     - ${{ inputs.token }}
     - ${{ inputs.log-level }}
     - ${{ inputs.auto-create }}
+    - ${{ inputs.update-issues }}
+    - ${{ inputs.update-projects }}
