@@ -233,7 +233,7 @@ class TranslationTracker:
                 status = Status.TBC
                 patch.diff = original_content
                 patch.additions = original_nb_lines
-                base_original = None
+                base_original = FileInfo(original.path)
 
             if status is None:
                 # get last commit from translation file

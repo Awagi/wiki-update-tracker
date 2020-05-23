@@ -1,80 +1,12 @@
-import requests
 import logging as log
-import os
-import json
 import sys
-import re
 from git import Repo, Actor, InvalidGitRepositoryError, NoSuchPathError
 from github import Github, GithubException, BadCredentialsException, RateLimitExceededException, UnknownObjectException
 from constants import GIT_AUTHOR, GIT_AUTHOR_EMAIL, GIT_COMMITTER, GIT_COMMITTER_EMAIL
 from tracker import TranslationTracker, SamePathException, LanguageTagException, Status
-from updater import GithubUpdater
+from updater import GithubUpdater, GitUpdater
 import templates
 import traceback
-
-
-STUB_COMMIT_MSG = ":tada: Creating stub translation pages"
-STUB_PAGE_CONTENT = ('---\n'
-'translation-done: false\n'
-'---\n'
-'::: danger\n'
-'Sorry, this page has not been translated yet, you can either:\n'
-'- refer to the [original English version](<{link_original_page}>),\n'
-'- wait for a translation to be done,\n'
-'- or contribute to translation effort [here](https://github.com/bsmg/wiki).\n'
-':::\n'
-'\n'
-'_Note for translators: this page was generated automatically, please remove this content before starting translation_\n'
-)
-
-def create_stubs(repo, tracks):
-    """
-    Automatically create, commit and push stub translation files with the header `translation-done: false` for To Be Created ones (when status is Status.TBC).
-
-    Useful when adding new language to the job, and to get notified when a new original page is created.
-
-    Changes TBC tracks status to TBI after creating files.
-
-    :param repo: the git Repo used to create stubs changes
-    :param tracks: the tracks created through TranslationTracker (iterable of TranslationTrackInfo instances)
-    """
-    paths = []
-    for track in tracks:
-        if track.status is Status.TBC:
-            log.debug("Generating stub translation file {}".format(track.translation.path))
-            paths.append(track.translation.path)
-            # format content with relative path to original file (from translation file directory)
-            relpath_original = os.path.relpath(track.original.path, os.path.split(track.translation.path)[0])
-            content = STUB_PAGE_CONTENT.format(link_original_page=relpath_original)
-
-            # create dirs and file
-            filepath = os.path.join(repo.working_tree_dir, os.sep.join(track.translation.path.split('/')))
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
-            with open(filepath, 'w') as f:
-                f.write(content)
-
-    if len(paths) > 0:
-        # add to index
-        repo.index.add(paths)
-        # git commit
-        log.debug("Committing created stub files")
-        author = Actor(GIT_AUTHOR, GIT_AUTHOR_EMAIL)
-        committer = Actor(GIT_COMMITTER, GIT_COMMITTER_EMAIL)
-        commit = repo.index.commit(STUB_COMMIT_MSG, author=author, committer=committer)
-
-        # git push
-        log.debug("Pushing changes")
-        origin = repo.remote(name='origin')
-        push = origin.push()
-        log.debug("Push response: {}".format(push[0].summary))
-
-        # putting TBC to same level of info than TBI
-        for track in tracks:
-            if track.status is Status.TBC:
-                track.status = Status.TBI
-                track.translation.blob = commit.tree[track.translation.path]
-                track.translation.commit = commit
-
 
 
 if __name__ == '__main__':
@@ -137,8 +69,13 @@ if __name__ == '__main__':
                 ignored_paths = ignored_paths.split(',')
 
             # check original path and translation paths and codes
+            try:
+                tag_paths = [tag_path.split(':') for tag_path in translations.split(',')]
+            except IndexError:
+                raise ValueError("translations with language tags + paths not formatted correctly")
+            ignored_paths.extend([path for tag, path in tag_paths])
             if len(translations) != 0:
-                for tag, path in [tag_path.split(':') for tag_path in translations.split(',')]:
+                for tag, path in tag_paths:
                     try:
                         # map translation dirs / files to their original equivalent dir / file
                         tracker.put(path, original_path, tag, ignore=ignored_paths, suffixes=[file_suffix])
@@ -198,9 +135,9 @@ if __name__ == '__main__':
             log.debug("Unexpected Github Exception: {}".format(str(e)))
             exit(1)
 
-        if top_issues and not repo.has_issues:
+        if top_issues and not github_repo.has_issues:
             log.warning("Won't update Issues: given repository doesn't have Issues enabled.")
-        if top_projects and not repo.has_projects:
+        if top_projects and not github_repo.has_projects:
             log.warning("Won't update Projects: given repository doesn't have Projects enabled.")
 
         # TRACKING changes
@@ -210,19 +147,19 @@ if __name__ == '__main__':
 
         # CREATING inexistent pages
         if auto_create:
+            creator = GitUpdater(tracks, sys_repo, Actor(GIT_COMMITTER, GIT_COMMITTER_EMAIL), Actor(GIT_AUTHOR, GIT_AUTHOR_EMAIL))
             log.info("Started creating stubsUpdating stub TBC pages PR.")
-            create_stubs(repo=sys_repo,
-                         tracks=tracks)
-            log.info("Finished updating stub TBC pages PR.")
+            creator.create_stubs(templates.STUB_COMMIT_MSG, templates.STUB_FILE_CONTENT)
+            log.info("Finished updating stub TBC files.")
 
         # UPDATING Issues / Projects
         try:
-            updater = GithubUpdater(repo, tracks)
+            updater = GithubUpdater(tracks, github_repo)
             if top_issues:
                 log.info("Started updating issues on Github.")
 
                 open_issues = updater.update_issues(bot_label=bot_label,
-                                                    title_template=templates.PROJECT_TITLE,
+                                                    title_template=templates.ISSUE_TITLE,
                                                     tbc_template=templates.ISSUE_BODY_TBC,
                                                     tbi_template=templates.ISSUE_BODY_TBI,
                                                     update_template=templates.ISSUE_BODY_UPDATE,
@@ -257,9 +194,12 @@ if __name__ == '__main__':
             exit(1)
 
         out_status = ','.join(["{}:{}".format(t.translation.path, t.status) for t in tracks])
-        out_issues = ','.join([str(number) for number in open_issues])
         print("::set-output name=translation-status::{}".format(out_status))
-        print("::set-output name=open-issues::{}".format(out_issues))
+        if top_issues:
+            out_issues = ','.join([str(number) for number in open_issues])
+            print("::set-output name=open-issues::{}".format(out_issues))
+        else:
+            print("::set-output name=open-issues::")
 
     except Exception as e:
         log.critical("Got an unexpected error, exiting.")
