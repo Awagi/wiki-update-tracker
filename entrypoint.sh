@@ -13,7 +13,7 @@
 # 11: update issues (true, false)
 # 12: update projects (true, false)
 result=$(python /usr/src/app/wiki-update.py $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12})
-if [ "$result" = "0" ]; then
+if [ "$result" = "1" ]; then
     echo "Script failed"
     exit 1
 fi
