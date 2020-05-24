@@ -89,7 +89,7 @@ PROJECT_COLUMN_UPDATE = UpdaterTemplate("To Update")
 PROJECT_COLUMN_UTD = UpdaterTemplate("Up-To-Date")
 
 PROJECT_CARD_UPDATE = UpdaterTemplate(
-    '**Update [`{t.translation_path}`](<{t.translation_url}>)** using:\n'
+    '**:pencil: [`{t.translation_path}`](<{t.translation_url}>)** using:\n'
     '* **[Github comparison](<{t.compare_url}>)**\n'
     '  * Comparison on **`{t.original_path}`**\n'
     '* or **[Diffchecker web](https://www.diffchecker.com)**\n'
@@ -103,7 +103,7 @@ PROJECT_CARD_UPDATE = UpdaterTemplate(
     '```\n'
 )
 PROJECT_CARD_TBI = UpdaterTemplate(
-    '**Initialize [`{t.translation_path}`](<{t.translation_url}>)** using:\n'
+    '**:warning: [`{t.translation_path}`](<{t.translation_url}>)** using:\n'
     '* **[The original file](<{t.original_url}>)**\n'
     '  * Use *Raw* for better accuracy\n'
     '\n'
@@ -113,7 +113,7 @@ PROJECT_CARD_TBI = UpdaterTemplate(
     '```\n'
 )
 PROJECT_CARD_TBC = UpdaterTemplate(
-    '**Create and initialize `{t.translation_path}`** using:\n'
+    '**:hammer_pick: :warning: `{t.translation_path}`** using:\n'
     '* **[The original file](<{t.original_url}>)**\n'
     '  * Use *Raw* for better accuracy\n'
     '\n'
