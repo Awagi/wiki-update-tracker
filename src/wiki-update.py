@@ -148,7 +148,7 @@ if __name__ == '__main__':
         # CREATING inexistent pages
         if auto_create:
             creator = GitUpdater(tracks, sys_repo, Actor(GIT_COMMITTER, GIT_COMMITTER_EMAIL), Actor(GIT_AUTHOR, GIT_AUTHOR_EMAIL))
-            log.info("Started creating stubsUpdating stub TBC pages PR.")
+            log.info("Started creating stubs.")
             creator.create_stubs(templates.STUB_COMMIT_MSG, templates.STUB_FILE_CONTENT)
             log.info("Finished updating stub TBC files.")
 

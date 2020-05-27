@@ -169,7 +169,7 @@ class GitUpdater(Updater):
             # git push
             log.debug("Pushing changes")
             origin = self.repo.remote(name='origin')
-            push = origin.push()
+            push = origin.push(force=True)
             log.debug("Push response: {}".format(push[0].summary))
 
             # putting TBC to same level of info than TBI
