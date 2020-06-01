@@ -7,6 +7,8 @@ import logging as log
 import frontmatter
 from yaml.scanner import ScannerError
 from constants import HEADER_TBI_KEY, HEADER_TBI_VALUE
+from pathlib import Path
+import glob
 
 
 class TrackerException(Exception):
@@ -66,10 +68,12 @@ class TranslationTrackInfo:
 
 @unique
 class Status(str, Enum):
-    TBC = "TBC"  # To Be Created, this kind of file must be initialized with a first translation
-    TBI = "TBI"  # To Be Initialized, the translated file exists but was not initialized with a starting translation
-    UTD = "UTD"  # Up To Date, nothing to be done here, the translation file was based on the latest original english file
-    Update = "UPDATE"  # requires an update
+    TBC = "To Create"  # this kind of file must be initialized with a first translation
+    TBI = "To Initialize"  # the translated file exists but was not initialized with a starting translation
+    UTD = "Up-To-Date"  # nothing to be done here, the translation file was based on the latest original english file
+    Update = "To Update"  # requires an update
+    Orphan = "Orphan"  # translation file has no corresponding original file
+
 
 
 class FileInfo:
@@ -123,6 +127,29 @@ class PatchInfo:
         self.changes = changes
 
 
+def fetch_files(path, glob_filter, glob_ignore):
+    """
+    Fetch files within a path matching glob_filter patterns and not glob_ignore patterns.
+
+    :param path: pathlib.Path, a valid directory path
+    :param glob_filter: list of str, glob-like patterns for files to filter relative to path
+    :param glob_ignore: list of str, glob-like patterns for files to ignore relative to path
+    :return: the list of resulting pathlib.Path
+    """
+    files = []
+    excludes = []
+    for gi in glob_ignore:
+        ex = glob.iglob("{}/{}".format(path.as_posix(), gi), recursive=True)
+        excludes.extend([Path(n) for n in ex])
+    for gf in glob_filter:
+        fi = glob.iglob("{}/{}".format(path.as_posix(), gf), recursive=True)
+        for n in fi:
+            p = Path(n)
+            if p.is_file() and p not in excludes:
+                files.append(p)
+    return files
+
+
 class TranslationTracker:
     """
     Represents the tracking part of the script, checking existent/non existent translation files and diff when changes where applied to original file.
@@ -137,27 +164,35 @@ class TranslationTracker:
         self.originals = {}  # keep track of generated original files FileInfo (key: str path, value: original file FileInfo)
         self.repo = git_repo
 
-    def put(self, translation_path, original_path, lang_tag, ignore=[], suffixes=[]):
+    def put(self, translation_path, original_path, lang_tag, glob_ignore=[], glob_filter=["**/*"]):
         """
         Puts a translation file or directory in the tracker, and maps/remaps it to its reflected based original file or directory.
 
-        Be a directory, every files within `original_path` will be added recursively, unless you explicitly ignore files under `original_path` in parameter `ignore`.
-        You can filter using allowed suffixes too, empty list for `suffixes` means no filter.
+        Be a directory, every files within `original_path` will be added according to filter.
         Also, as directories, `original_path` and `translation_path` must have the same structure and filenames.
 
         Be a file, `original_path` must exist.
 
-        :param translation_path: str, a valid path relative to the git repo, different from `original_path`
-        :param original_path: str, a valid path relative to the git repo
-        :param lang_tag: the language tag from RFC 5646 to apply on this translation
-        :param ignore: list of str, files to be ignored
-        :param suffixes: list of str, suffixes of files to be tracked, empty to take all
+        :param translation_path: pathlib.Path, a valid path relative to the git repo, different from `original_path`
+        :param original_path: pathlib.Path, a valid path relative to the git repo
+        :param lang_tag: str, the language tag from RFC 5646 to apply on this translation
+        :param glob_filter: list of str, glob patterns to filter files to be tracked, defaults to all files
+        :param glob_ignore: list of str, glob patterns to filter files to be ignored if matching a filter
         :raise SamePathException: when original and translation paths are the same
         :raise ValueError: when original file is not found in repo
         :raise LanguageTagException: when given language tag is not referenced in RFC 5646
         """
         if translation_path == original_path:
             raise SamePathException()
+
+        if original_path.is_file():
+            
+        # get every existing original files and translation files
+        originals = fetch_files(original_path, glob_filter, glob_ignore)
+        translations = fetch_files(translation_path, glob_filter, glob_ignore)
+
+        for original in originals:
+
 
         active_commit = self.repo.active_branch.commit
         tree = active_commit.tree

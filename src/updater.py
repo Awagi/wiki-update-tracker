@@ -9,6 +9,7 @@ class TemplateInfo:
     Contains info for the updater templates, such as:
         - `language`: language for current translation, provided in TBC, TBI, Update, UTD (Updater)
         - `lang_tag`: language tag for current translation, as of RFC 5646, provided in TBC, TBI, Update, UTD (Updater)
+        - `status`: status of the current translation, provided in TBC, TBI, Update, UTD (Updater)
         - `translation_filename`: filename of translation file, provided in TBC, TBI, Update, UTD (Updater)
         - `original_filename`: filename of original file, provided in TBC, TBI, Update, UTD (Updater)
         - `base_original_filename`: filename of base original file, provided in TBC, TBI, Update, UTD (Updater)
@@ -32,6 +33,7 @@ class TemplateInfo:
     def __init__(self):
         self.language = ""
         self.lang_tag = ""
+        self.status = ""
         self.translation_filename = ""
         self.original_filename = ""
         self.base_original_filename = ""
@@ -94,6 +96,16 @@ class Updater:
         self.template_info = {}
         for track in self.tracks:
             tinfo = TemplateInfo()
+            if track.status is Status.TBC:
+                tinfo.status = "To Create"
+            elif track.status is Status.TBI:
+                tinfo.status = "To Initialize"
+            elif track.status is Status.Update:
+                tinfo.status = "To Update"
+            elif track.status is Status.UTD:
+                tinfo.status = "Up-To-Date"
+            elif track.status is Status.Orphan:
+                tinfo.status = "Orphan"
             if track.status in [Status.TBC, Status.TBI, Status.Update, Status.UTD]:
                 tinfo.language = track.translation.language
                 tinfo.lang_tag = track.translation.lang_tag
@@ -132,7 +144,7 @@ class GitUpdater(Updater):
         self.author = author
         self.update_info()
 
-    def create_stubs(self, commit_msg, stub_content_template):
+    def create_stubs(self, commit_msg, stub_content_template, force_push=False):
         """
         Automatically create, commit and push stub translation files with the header `translation-done: false` for To Be Created ones (when status is Status.TBC).
 
@@ -142,6 +154,7 @@ class GitUpdater(Updater):
 
         :param commit_msg: str, git commit message for changes
         :param stub_content_template: instance of UpdaterTemplate, the content of the created stub file
+        :param force_push: use "git push --force" instead of "git push" when True
         """
         paths = []
         for track in self.tracks:
@@ -169,7 +182,10 @@ class GitUpdater(Updater):
             # git push
             log.debug("Pushing changes")
             origin = self.repo.remote(name='origin')
-            push = origin.push(force=True)
+            if force_push:
+                push = origin.push(force=True)
+            else:
+                push = origin.push()
             log.debug("Push response: {}".format(push[0].summary))
 
             # putting TBC to same level of info than TBI

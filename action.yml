@@ -2,67 +2,273 @@
 name: 'Wiki Update Tracker'
 description: 'Check diff in a git repo'
 inputs:
-  repo-path:
-    description: 'The local path of the git repo on the system, make sure you checkout on the desired branch'
-    required: true
-  original-path:
-    description: 'The relative path of original files in the git repo, such as "wiki"'
-    required: true
-  ignored-paths:
-    description: 'The relative ignored paths within original path which should not be reviewed (can be files or entire directories), as a comma-separated list, such as "wiki/LICENSE"'
-    required: false
-    default: ""
-  translations:
-    description: 'The relative paths of translation files in the git repo with their associated language tag and matching the original files structure, as a comma-separated list, such as "fr:wiki/fr,zh:wiki/zh"'
-    required: true
-  file-suffix:
-    description: 'The suffix of wiki pages that will be reviewed'
-    required: false
-    default: ".md"
-  repository:
-    description: 'The repository to update issues, in the form "Author/repo"'
-    required: false
-    default: "${{ github.repository }}"
-  bot-label:
-    description: 'The label name used by the script to manage issues, all issues using this label will be managed'
-    required: true
-  token:
-    description: 'The authorization token to update issues (requires read/write access on issues)'
   log-level:
-    description: 'The python script log level, either DEBUG, INFO, WARNING or ERROR'
+    description: 'The python script log level, either CRITICAL, ERROR, WARNING, INFO, DEBUG or NOTSET'
     required: false
     default: "INFO"
-  auto-create:
-    description: 'Enable automatic files creation through git'
+  # 1) Backtracking
+  repo-glob:
+    description: 'The local path of the checked-out git repository, make sure you checkout on the desired branch'
+    required: true
+  original:
+    description: 'Glob pattern matching the original files, relative to repo-path'
+    required: true
+  ignores:
+    description: 'Glob patterns to ignore when parsing original globs, relative to repo-path'
+    required: false
+    default: ''
+  translations:
+    description: 'Glob patterns matching the translation files, relative to repo-path, along with their associated language tag'
+    required: true
+  # 2) Auto generation
+  gen-stubs:
+    description: 'Automatically create To Be Created translation files matching one of the given glob patterns, with content defined by stub-template'
+    required: false
+    default: ''
+  stub-commit:
+    description: 'The commit message when generating stub pages'
+    required: false
+    default: ':tada: Created stub translation files'
+  stub-template:
+    description: 'Template defining the content of auto created stub files - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: |
+      ---
+      translation-done: false
+      ---
+      ::: danger
+      Sorry, this page has not been translated yet, you can either:
+      - refer to the [original English version](<{t.translation_to_original_path}>),
+      - wait for a translation to be done,
+      - or contribute to translation effort [here](https://github.com/bsmg/wiki).
+      :::
+
+      _Note for translators: this page was generated automatically, please remove this content before starting translation_
+  gen-copy:
+    description: 'Automatically copy original files as "To Create" translation files matching one of the given glob patterns - checked-out repository must have read/write access to Contents'
+    required: false
+    default: ''
+  copy-commit:
+    description: 'The commit message when generating file copies'
+    required: false
+    default: ':tada: Copied original files to translation'
+  branch-gen:
+    description: 'The branch where files will be pushed when auto generating changes - empty name means files will be committed to checked-out repository active branch'
+    required: false
+    default: ''
+  # 3) Instructing
+  repository:
+    description: 'The repository to instruct to, in the form "Author/repo"'
+    required: false
+    default: "${{ github.repository }}"
+  token:
+    description: 'The authorization token to update issues or projects'
+    required: false
+    default: "${{ github.token }}"
+  request-merge:
+    description: 'Request merging "branch-gen" (if set and if changes were applied) to checked-out repository active branch through a Pull Request - Github App token requires read/write access to Pull Requests'
     required: false
     default: 'false'
-  update-issues:
-    description: 'Enable issues updating to get notified of changes'
+  instruct-issues:
+    description: 'Instruct translators on translation files matching given fnmatch patterns through Github Issues - Github App token requires read/write access to Issues in repository'
     required: false
-    default: 'false'
-  update-projects:
-    description: 'Enable projects updating to get notified of changes'
+    default: ''
+  issue-label:
+    description: "The label name used by the Update Tracker to manage issues, other issues won't be seen"
     required: false
-    default: 'false'
+    default: 'translation-update'
+  issue-title-template:
+    description: 'The issue title template - the resulting issue title must be unique, keep {t.translation_path} in the template'
+    required: false
+    default: 'Translation file: {t.translation_path}'
+  issue-create-template:
+    description: 'The issue body template for "To Create" translation files - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: |
+      ## :page_facing_up: Translation creation & initialization
+      A new original wiki page has been detected: `{t.original_path}`. It has no associated translation yet.
+
+      Please create the file **{t.translation_path}** and initialize the translation based on the [original English version](<{t.original_url}>).
+
+      ### :bar_chart: Workload
+
+      Calculated lines to translate from the original file `{t.original_path}`:
+
+      ```diff
+      + {t.patch_additions} lines
+      ```
+  issue-initialize-template:
+    description: 'The issue body template for "To Initialize" translation files - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: |
+      ## :page_facing_up: Translation initialization
+      A new original wiki page has been detected: `{t.original_path}`. It has no associated translation yet (though the file `{t.translation_path}` already exists).
+
+      Please **[initialize the translation here](<{t.translation_url}>)**. Base your translation on the [original English version](<{t.original_url}>).
+
+      ### :bar_chart: Workload
+      \n'
+      Calculated lines to translate from the original file `{t.original_path}`:
+
+      ```diff
+      + {t.patch_additions} lines
+      ```
+  issue-update-template:
+    description: 'The issue body template for "To Update" translation files - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: |
+      ## :bookmark_tabs: Translation update
+      Since **`{t.translation_path}`** was last updated, changes have been detected in the original wiki page `{t.original_path}` it is based on.
+
+      Please update **[the translation here](<{t.translation_url}>)** accordingly, respecting contribution guidelines.
+
+      ### :bar_chart: Workload
+
+      Calculated changes made to the original file `{t.original_path}` (as lines):
+
+      ```diff
+      + {t.patch_additions} additions
+      - {t.patch_deletions} deletions
+      ! {t.patch_changes} total lines updated
+      ```
+
+      ### :wrench: Translation tools
+
+      You can choose one of the following options to help you see what changed:
+      1. Use this [Github comparison](<{t.compare_url}>) and find the comparison on the file **`{t.original_path}`**.
+      2. OR use [Diffchecker web version](https://www.diffchecker.com/). Copy/paste [this original text](<{t.raw_base_original_url}>) in the left field and [this changed text](<{t.raw_original_url}>) in the right field, then press "Find Difference".
+      3. OR simply use the detailed patch below.
+
+      'Detailed additions and deletions on `{t.original_path}`:
+      ```diff
+      {t.patch_diff}
+      ```
+  issue-uptodate-template:
+    description: 'The issue body template for "Up-To-Date" translation files - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: |
+      ## :heavy_check_mark: Nothing to do
+      Thanks to your involvement, `{t.translation_path}` is up-to-date! :1st_place_medal:
+
+      Let's keep it that way for every wiki pages!
+  issue-orphan-template:
+    description: 'The issue body template for "Orphan" translation files - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: |
+      ## :recycle: Orphan translation
+      The translation file **`{t.translation_path}`** doesn't have a corresponding original page which should be named `{t.original_path}`.
+
+      Please check **[the translation here](<{t.translation_url}>)**:
+      - rename it if the original path `{t.original_path}` was actually renamed.
+      - remove it if the original file was removed.
+  instruct-projects:
+    description: 'Instruct translators on translation files matching given fnmatch patterns through Github Projects - Github App token requires read/write access to Projects in repository'
+    required: false
+    default: ''
+  project-title-template:
+    description: 'The project name template - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: 'Wiki {t.language} Update Tracker'
+  project-description-template:
+    description: 'The project description template when it is created - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: '{t.language} translation effort.'
+  project-column-create-template:
+    description: 'The column template in project to include "To Create" translation file cards - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: 'To Initialize'
+  project-column-initialize-template:
+    description: 'The column template in project to include "To Initialize" translation file cards - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: 'To Initialize'
+  project-column-update-template:
+    description: 'The column template in project to include "To Update" translation file cards - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: 'To Update'
+  project-column-uptodate-template:
+    description: 'The column template in project to include "Up-To-Date" translation file cards - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: 'Up-To-Date'
+  project-column-orphan-template:
+    description: 'The column template in project to include "Orphan" translation file cards - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: 'Orphans'
+  project-card-create-template:
+    description: 'The card template in project column for "To Create" translation files - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: |
+      **:hammer_pick: :warning: `{t.translation_path}`**
+      * **[The original file](<{t.original_url}>)**
+        * Use *Raw* for better accuracy
+
+      **`{t.original_path}`** contains:
+      ```diff
+      + {t.patch_additions} lines
+      ```
+  project-card-initialize-template:
+    description: 'The card template in project column for "To Initialize" translation files - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: |
+      **:warning: [`{t.translation_path}`](<{t.translation_url}>)**
+      * **[The original file](<{t.original_url}>)**
+        * Use *Raw* for better accuracy
+
+      **`{t.original_path}`** contains:
+      ```diff\n'
+      + {t.patch_additions} lines
+      ```
+  project-card-update-template:
+    description: 'The card template in project column for "To Update" translation files - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: |
+      **:pencil: [`{t.translation_path}`](<{t.translation_url}>)**
+      * **[Github comparison](<{t.compare_url}>)**
+        * Comparison on **`{t.original_path}`**
+      * or **[Diffchecker web](https://www.diffchecker.com)**
+        * [Old original content](<{t.raw_base_original_url}>)
+        * [Recent original content](<{t.raw_original_url}>)
+  
+      **`{t.original_path}`** changes:
+      ```diff
+      + {t.patch_additions} lines
+      - {t.patch_deletions} lines
+      ```
+  project-card-uptodate-template:
+    description: 'The card template in project column for "Up-To-Date" translation files - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: |
+      :heavy_check_mark: **`{t.translation_path}`** is up-to-date!
+  project-card-orphan-template:
+    description: 'The card template in project column for "Orphan" translation files - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
+    required: false
+    default: |
+      **:recycle: [`{t.translation_path}`](<{t.translation_url}>)**
+      * `{t.original_path}` renamed or removed?
 
 outputs:
-  translation-status: 
-    description: 'The current status for every translation files, in the form "filepath:status", with status being "UPDATE", "TBC" (to be created), "TBI" (to be initialized) or "UTD" (up-to-date), and as a comma-separated list'
-  open-issues:
-    description: 'The numbers of open issues asking a translation update, as a comma-separated list'
+  translation-tracks: 
+    description: 'Tracked info for every translation files as a application/json format'
+
 runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
+    # order from entrypoint.sh
+    - ${{ inputs.log-level }}
     - ${{ inputs.repo-path }}
     - ${{ inputs.original-path }}
-    - ${{ inputs.ignored-paths }}
+    - ${{ inputs.exclude }}
     - ${{ inputs.translations }}
-    - ${{ inputs.file-suffix }}
+    - ${{ branch-gen }}
+    - ${{ gen-stubs }}
+    - ${{ stub-commit }}
+    - ${{ stub-template }}
+    - ${{ gen-copy }}
+    - ${{ commit-copy }}
     - ${{ inputs.repository }}
     - ${{ inputs.bot-label }}
     - ${{ inputs.token }}
-    - ${{ inputs.log-level }}
     - ${{ inputs.auto-create }}
     - ${{ inputs.update-issues }}
     - ${{ inputs.update-projects }}
+    - ${{ inputs.auto-create-branch }}
