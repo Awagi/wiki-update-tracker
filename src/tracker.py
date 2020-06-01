@@ -79,7 +79,7 @@ class Status(str, Enum):
 class FileInfo:
     """
     Contains info about a file to track:
-        - `path`: its relative path within the git repo
+        - `path`: its relative path within the git repo (pathlib.Path)
         - `blob`: file blob representation (Blob object from git)
         - `commit`: blob from this commit (Commit object from git)
     """
@@ -150,6 +150,23 @@ def fetch_files(path, glob_filter, glob_ignore):
     return files
 
 
+def replace_parent(path, parent, new_parent):
+    """
+    Forge a new path replacing a parent path into a new parent path.
+
+    Useful to get corresponding path from translation file to original file, or from original file to translation file.
+
+    :param path: the path to translate
+    :param parent: one of the path parents, to remove
+    :param new_parent: new path to inject in place of parent
+    :return: new path translated
+    """
+    parent_str = parent.as_posix()
+    child_str = path.as_posix()
+    child_suffix = child_str[len(parent_str):]  # includes first char '/' if path != parent
+    return Path("{}{}".format(new_parent.as_posix(), child_suffix))
+
+
 class TranslationTracker:
     """
     Represents the tracking part of the script, checking existent/non existent translation files and diff when changes where applied to original file.
@@ -160,7 +177,7 @@ class TranslationTracker:
 
         :param git_repo: the git Repo object
         """
-        self.map = {}  # key: translation filepath, original FileInfo
+        self.map = {}  # key: translation Path, value: original Path
         self.originals = {}  # keep track of generated original files FileInfo (key: str path, value: original file FileInfo)
         self.repo = git_repo
 
@@ -171,7 +188,7 @@ class TranslationTracker:
         Be a directory, every files within `original_path` will be added according to filter.
         Also, as directories, `original_path` and `translation_path` must have the same structure and filenames.
 
-        Be a file, `original_path` must exist.
+        Be a file, glob_filter and glob_ignore are irrelevant.
 
         :param translation_path: pathlib.Path, a valid path relative to the git repo, different from `original_path`
         :param original_path: pathlib.Path, a valid path relative to the git repo
@@ -179,20 +196,38 @@ class TranslationTracker:
         :param glob_filter: list of str, glob patterns to filter files to be tracked, defaults to all files
         :param glob_ignore: list of str, glob patterns to filter files to be ignored if matching a filter
         :raise SamePathException: when original and translation paths are the same
-        :raise ValueError: when original file is not found in repo
+        :raise ValueError: when original_path is not a file nor a directory
         :raise LanguageTagException: when given language tag is not referenced in RFC 5646
         """
         if translation_path == original_path:
             raise SamePathException()
 
         if original_path.is_file():
-            
-        # get every existing original files and translation files
-        originals = fetch_files(original_path, glob_filter, glob_ignore)
-        translations = fetch_files(translation_path, glob_filter, glob_ignore)
+            originals = [original_path]
+            translations = [translation_path]
+        elif original_path.is_dir():
+            # get every existing original files and translation files
+            originals = fetch_files(original_path, glob_filter, glob_ignore)
+            translations = fetch_files(translation_path, glob_filter, glob_ignore)
+        else:
+            raise ValueError("original path is neither a file or a directory")
 
+        # map translations to originals from found original paths and from found translation paths
         for original in originals:
+            translation = replace_parent(original, original_path, translation_path)
+            if translation not in self.map:
+                self.map[translation] = original
+                log.debug("Mapped translation file '{}' to original file '{}'".format(translation, original))
+        for translation in translations:
+            if translation not in self.map:
+                original = replace_parent(translation, translation_path, original_path)
+                self.map[translation] = original
+                log.debug("Mapped translation file '{}' to original file '{}'".format(translation, original))
 
+
+        # TODO remove or change to track
+        # check if exist in active_commit
+        # get last commit modified
 
         active_commit = self.repo.active_branch.commit
         tree = active_commit.tree
@@ -248,6 +283,8 @@ class TranslationTracker:
         :return: a list of TranslationTrackInfo
         """
         tracks = []
+
+        # TODO 
 
         for translation in self.map.keys():
             original = self.map[translation]
