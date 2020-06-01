@@ -1,0 +1,81 @@
+name: Vuepress Update Tracker
+
+# Triggers with push on the branch that includes your Vuepress pages
+on:
+  push:
+    branches: [master]
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+
+    steps:
+      # This step is recommended to limit the job to least privilege.
+      # Yet it is not mandatory as Github Actions create a dummy ready-to-use token with too much permissions granted.
+      # The Github App should have:
+      # - read/write access to Pull requests
+      # - read/write access to Projects
+      # - read/write access to Contents
+      # and should be installed on the repository
+      - name: Get custom App JWT
+        id: get_token
+        uses: machine-learning-apps/actions-app-token@0.21
+        with:
+          APP_PEM: ${{ secrets.APP_PEM }}
+          APP_ID: ${{ secrets.APP_ID }}
+
+      # Checkout is necessary to create the git repository
+      - name: Checkout git repository
+        uses: actions/checkout@v2
+        with:
+          # This branch includes the Vuepress pages you want to track
+          ref: master
+          fetch-depth: 0
+          token: ${{ steps.get_token.outputs.app_token }}
+
+      - name: Check original pages status and update translation Projects
+        uses: Awagi/wiki-update-tracker@v1.8
+        with:
+          # Checked-out repo path
+          repo-path: $GITHUB_WORKSPACE
+          # BACKTRACKING
+          # Original pages are in 'docs' within the repository
+          original-path: "docs/**"
+          # Translation pages are in 'docs/zh' within the repository, language tag is 'zh', same with 'fr'
+          translations: |
+            zh:docs/zh/**
+            fr:docs/fr/**
+          # Exclude every files within 'docs/.vuepress', a folder that is likely to be placed here in vuepress
+          exclude: |
+            docs/.vuepress/**
+          # AUTO GENERATION
+          # The script will commit to a dedicated branch named bot-branch, and request merging with checked-out repository active branch
+          branch-gen: "bot-branch"
+          # Automatically create '.md' missing ("To Create") translation pages
+          gen-stubs: |
+            *.md
+          # Custom template as content for created stubs, with Front Matter header
+          stub-template: |
+            ---
+            translation-done: false
+            ---
+            ::: danger
+            Sorry, this page has not been translated yet, you can either:
+            - refer to the [original English version](<{t.translation_to_original_path}>),
+            - wait for a translation to be done
+            :::
+
+            _Note for translators: this page was generated automatically, please remove this content before starting translation_
+          # Automatically copy missing translation files (like images, videos, etc.), non-'.md' files because gen-stubs occurs before. Copy from original file
+          gen-copy: |
+            *
+          # INSTRUCTING
+          # See recommended step described above.
+          token: ${{ steps.get_token.outputs.app_token }}
+          # Make a Pull Request to propose changes made in branch-gen
+          request-merge: 'true'
+          # Instruct using Github Projects for .md files only
+          instruct-projects: |
+            *.md
+          # Customized Project title
+          project-title-template: "Vuepress {t.language} Pages Tracker"
