@@ -2,7 +2,7 @@
 
 OUTPUT_NAME="transation-tracks"
 
-cmd="python /usr/src/app/wiki-update.py"
+cmd="python /usr/src/app/main.py"
 
 arg_loglevel=$1  # 1) log-level
 arg_repopath=$2  # 2) repo-path
