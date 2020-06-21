@@ -45,17 +45,17 @@ For the system to work efficiently, these assumptions are made and should be res
 
 - New input `auto-copy` in addition to `auto-create`.
 - New input `auto-branch` to 
-- *WARNING*: input `ignored-paths` was removed, replaced by `exclude`
-- *WARNING*: input `file-suffix` was removed, no replacement 
-- *WARNING*: input `update-issues` was removed, replaced by `globs`
-- *WARNING*: input `auto-create` was removed, replaced by `auto-create-globs` accepting glob patterns instead of simply enabling/disabling
-- *WARNING*: input `bot-label` was renamed to `issue-label`
+- **WARNING**: input `ignored-paths` was removed, replaced by `exclude`
+- **WARNING**: input `file-suffix` was removed, no replacement 
+- **WARNING**: input `update-issues` was removed, replaced by `globs`
+- **WARNING**: input `auto-create` was removed, replaced by `auto-create-globs` accepting glob patterns instead of simply enabling/disabling
+- **WARNING**: input `bot-label` was renamed to `issue-label`
 
 ### New in v1.7
 - Github Projects is supported through input `update-projects`.
 - Issues can now be enabled and disabled through input `update-issues`.
 - Script much more stable and adaptable.
-- *WARNING*: `translation-paths` was removed, because paths must now be given with corresponding language tags as described in new input `translations`.
+- **WARNING**: `translation-paths` was removed, because paths must now be given with corresponding language tags as described in new input `translations`.
 
 ### New in v1.6
 - Update Tracker now automatically creates stub files when missing, with the correct header. Can be enabled or disabled in `auto-create` input.
@@ -74,6 +74,39 @@ translation-done: false
 
 Pre-requisite is a checked-out git repository set up on the active branch you want to track (use [checkout](https://github.com/actions/checkout)).
 
+Then use this job in your workflow file (you might find useful these [examples](#use-case-examples)):
+
+```yml
+- uses: Awagi/wiki-update-tracker@v1.8
+  with:
+    #
+    #
+    repo-path: ''
+
+    #
+    #
+    original-path: ''
+
+    #
+    #
+    ignored-paths: ''
+
+    #
+    #
+    translations: ''
+
+    #
+    #
+    repository: ''
+
+    #
+    #
+    file-suffix: ''
+
+    #
+    #
+
+```
 
 **`repo-path`**
 
@@ -328,17 +361,86 @@ This would result in something like `"French translation: wiki/fr/README.md"`.
 
 ## Outputs
 
-**`translation-status`**
+### tracks
 
-Comma-separated list containing the Wiki pages used for translation and their status, in the form `path:status`. The path is relative to the git repo.
+JSON representation of tracked translation and original files, as a list of `TranslationTrack`.
 
-The status can be:
-- `UTD` if the page is up-to-date
-- `UPDATE` if the page requires an update
-- `TBC` if the page needs to be created and initialized
-- `TBI` if the page needs to be initialized
+A **`TranslationTrack`** object contains:
+| Key | Value type | Description |
+| --- | --- | --- |
+| **`translation`** | `TranslationGitFile` object | Tracked translation file. |
+| **`original`** | `GitFile` object | Matching original file. |
+| **`status`** | string | Either `"To Create"`, `"To Initialize"`, `"To Update"`, `"Up-To-Date"`, `"Orphan"`. |
 
-Example: `wiki/fr/README.md:UPDATE,wiki/fr/beginners-guide.md:UTD`
+Additional data may be provided according to a track status:
+| Status | Key | Value type | Description |
+| `"To Create"` | **`missing_lines`** | integer | Number of missing lines in translation file, i.e actual number of lines in original file. |
+| `"To Initialize"` | **`missing_lines`** | integer | Number of missing lines in translation file, i.e actual number of lines in original file. |
+| `"To Update"` | **`base_original`** | `GitFile` object | Base original file used to update most recent translation file. |
+| `"To Update"` | **`patch`** | `GitPatch` object | Patch with changes from base original file to original file, instructing required update. |
+| `"To Update"` | **`to_rename`** | boolean | Indicates whether the translation file has to be renamed like the new original filename, or not. |
+| `"Orphan"` | **`deleted`** | boolean | Indicates whether the original file was deleted, or not (i.e it never existed). |
+| `"Orphan"` | **`surplus_lines`** | integer | Number of lines in excess, i.e actual number of lines in translation file. |
+
+A **`GitFile`** object contains:
+| Key | Value type | Description |
+| **`path`** | string | Path to the file, relative to the git repository. |
+| **`no_trace`** | boolean | Indicates whether the file doesn't exist in git commit history, or it does. |
+| **`commit`** | string or null | Sha-1 (40 hexadecimal characters) of the most recent commit modifying the file, null if `no_trace` is true. |
+| **`new_file`** | boolean | Indicates whether the file is a new file in commit, or not. |
+| **`copied_file`** | boolean | Indicates whether the file was copied in commit, or not. |
+| **`renamed_file`** | boolean | Indicates whether the file was renamed in commit, or not. |
+| **`rename_from`** | string or null | Path of the old filename if it was renamed. |
+| **`rename_to`** | string or null | Path of the new filename if it was renamed. |
+| **`deleted_file`** | boolean | Indicates whether the file was deleted in commit, or not. |
+
+A **`TranslationGitFile`** object contains every items of a `GitFile` object, plus:
+| Key | Value type | Description |
+| **`lang_tag`** |  |  |
+| **`language`** |  |  |
+
+
+
+**`TranslationTrack`** values
+| Type | JSON Type
+
+
+You can [use this output in your workflow](https://help.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#fromjson) like so: ``
+
+Example:
+```json
+[
+    {
+        "translation": {
+            "path": "wiki/zh/grips-and-tricks.md",
+            "no_trace": false,
+            "commit": "4ce6ebd661d3a0ce1b0e07212f092e73b5c7c252",
+            "new_file": false,
+            "copied_file": false,
+            "renamed_file": false,
+            "rename_from": null,
+            "rename_to": null,
+            "deleted_file": false,
+            "lang_tag": "zh",
+            "language": "Chinese"
+        },
+        "original": {
+            "path": "wiki/grips-and-tricks.md",
+            "no_trace": false,
+            "commit": "d6fb43c9fa56999ce9339bc2bdaa95b7dcbc0964",
+            "new_file": false,
+            "copied_file": false,
+            "renamed_file": false,
+            "rename_from": null,
+            "rename_to": null,
+            "deleted_file": true
+        },
+        "status": "Orphan",
+        "deleted": true,
+        "surplus_lines": 0
+    }
+]
+```
 
 **`open-issues`**
 
@@ -346,7 +448,7 @@ Comma-separated list containing open issue numbers (when a file requires updatin
 
 Example: `65,67,70`
 
-## Use-case
+## Use-case examples
 
 ### Vuepress i18n
 
@@ -370,15 +472,14 @@ docs
       └─ README.md
 ```
 
-_**Note**: just added `fr` translation path for the example of multiple repository_
+**Original pages** are located in **`docs`**, while **translation pages** are reflected in **`docs/zh`** and **`docs/fr`**.
 
-To keep track of discrepancies between original pages in `docs` and translation pages in `docs/zh`, see the [example workflow file](examples/vuepress-update-tracker.yml) using this action.
+To keep track of discrepancies between original pages in `docs` and translation pages in `docs/zh` and `docs/fr`, see the [example workflow file](examples/vuepress-update-tracker.yml) using this action.
 
-## How it works
+## API reference
 
-Quickly resumed, the script:
-- checks blobs, trees, commits and diffs to tell either a translation file should be updated or not, using [GitPython](https://github.com/gitpython-developers/GitPython) on a local repository.
-- updates issues accordingly, giving tools to help the translator, using [Github API](https://developer.github.com/v3/issues/) through the [repo's GitHub App](https://help.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token).
+Documentation can be found in Python modules within [`src/`](src).
 
+## License
 
-
+This project assets (source code, documentation and examples) are published under the [MIT License](LICENSE).

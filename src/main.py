@@ -11,6 +11,7 @@ import templates
 import traceback
 import argparse
 import json
+from json_utils import TranslationTrackEncoder
 from pathlib import Path
 
 
@@ -247,9 +248,9 @@ if __name__ == '__main__':
 
         # create tracker
         tracker = TranslationTracker(args.git_repo)
-        ignore = args.ignore + [path for tag, path in args.translations]
+        ignore = args.ignore + ["{}/**/*".format(path.as_posix()) for tag, path in args.translations]
         for tag, path in args.translations:
-            tracker.put(path, args.original, tag, ignore=ignore, filter=args.filter)
+            tracker.put(path, args.original, tag, original_ignore_globs=ignore, filter_globs=args.filter)
 
         # TRACKING changes
         log.info("Started tracking given translation files.")
@@ -265,7 +266,7 @@ if __name__ == '__main__':
 
         # UPDATING Issues / Projects
         try:
-            updater = GithubUpdater(tracks, args.github_repo)
+            #updater = GithubUpdater(tracks, args.github_repo)
             if args.request_merge:
                 # TODO make PR
                 pass
@@ -313,7 +314,7 @@ if __name__ == '__main__':
             exit(1)
 
         out_status = ','.join(["{}:{}".format(t.translation.path, t.status) for t in tracks])
-        json.dump(tracks, args.output)
+        json.dump(tracks, args.output, cls=TranslationTrackEncoder, separators=(',', ':'))
 
     except Exception:
         log.critical("Got an unexpected error, exiting.")
