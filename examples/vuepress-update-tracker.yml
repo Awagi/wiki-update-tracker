@@ -55,17 +55,7 @@ jobs:
           gen-stubs: |
             *.md
           # Custom template as content for created stubs, with Front Matter header
-          stub-template: |
-            ---
-            translation-done: false
-            ---
-            ::: danger
-            Sorry, this page has not been translated yet, you can either:
-            - refer to the [original English version](<{t.translation_to_original_path}>),
-            - wait for a translation to be done
-            :::
-
-            _Note for translators: this page was generated automatically, please remove this content before starting translation_
+          stub-template: .github/vuepress-update-tracker/stub-template.md
           # Automatically copy missing translation files (like images, videos, etc.), non-'.md' files because gen-stubs occurs before. Copy from original file
           gen-copy: |
             *

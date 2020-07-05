@@ -303,61 +303,43 @@ The resulting card content must be unique, keep `{t.translation_path}` in the te
 
 ### About Templates
 
-Templates allow you to define your own custom content for stub files, issues and projects.
+Templates allow you to define your own custom content when generating stub files or instructing issues and projects.
 
-According to tracked translation files, different contexts are given to a template to format the resulting content.
-This means some keys are given only in a particular status.
+A template context is given in every template [inputs](#usage): you know for which status the template is going to be formatted, or if it is formatted regardless of the status.
+Knowing so, you can create your template using provided arguments.
 
-#### Template keys
+Arguments must be included in the template as a Python format tag, surrounded with curly brackets, like `{arg}`.
 
-Below are the keys you can find and use in your template for each status and when no status is specified.
-
-| | | Any status | **To Create** | **To Initialize** | **To Update** | **Up-To-Date** | **Orphan** |
-|-|-|-|-|-|-|-|-|
-| `language` | Language name | X | X | X | X | X | X |
-| `lang_tag` | Language tag as of RFC 5646 | X | X | X | X | X | X |
-| `status` | Translation file status | X | X | X | X | X | X |
-| `translation_filename` | Translation file name | X | X | X | X | X | X |
-| `original_filename` | Original file name | X | X | X | X | X | X |
-| `base_original_filename` | Base original file* name | X | X | X | X | X | X |
-| `translation_path` | Path of the translation file | X | X | X | X | X | X |
-| `original_path` | Path of the original file | X | X | X | X | X | X |
-| `original_commit` | Original file commit sha | X | X | X | X | X |  |
-| `translation_commit`| Translation file commit sha |  |  | X | X | X | X |
-| `patch_diff` | String comparison |  |  |  | X |  |  |
-| `patch_additions` | Number of lines to add | X | X | X | X | X | X |
-| `patch_deletions` | Number of lines to delete | X | X | X | X | X | X |
-| `patch_changes` | Number of lines changed |  |  |  | X |  |  |
-| `translation_to_original_path` | Relative path from translation file parent directory to original file | X | X | X | X | X | X |
-
-_*The base original file is the latest original file used to translate the current translation file: it differs from original file in "To Update" context and is the same in "Up-To-Date"_
-
-#### Github template keys
-
-When updating Issues or Projects, some keys are provided in addition to those described above.
-
-| | | Any status | **To Create** | **To Initialize** | **To Update** | **Up-To-Date** | **Orphan** |
-|-|-|-|-|-|-|-|-|
-| `translation_url` | Github URL to translation file (using branch rev) | X | X | X | X | X | X |
-| `original_url` | Github URL to original file (using commit rev) | X | X | X | X | X |  |
-| `raw_original_url` | Github URL to raw original file (using commit rev) |  | X | X | X | X |  |
-| `raw_translation_url` | Github URL to raw translation file (using commit rev) |  |  | X | X | X | X |
-| `base_original_url` | Github URL to base original file (using commit rev) |  |  |  | X |  |  |
-| `raw_base_original_url` | Github URL to raw base original file (using commit rev) |  |  |  | X |  |  |
-| `compare_url` | Github URL to Github comparison (using base_original and original commit rev) |  |  |  | X |  |  |
-
-#### Template key usage
-
-Keys must be included in the template like a Python format string including a `t` object holding above-described attributes. If the key doesn't exist in a specific context, it will result in an error stopping the Action.
+A `t` argument is always given in templates, representing a `TranslationTrack` and holding values described in [`tracks` output](#tracks). Also you can find special arguments in every specific template.
+If the argument doesn't exist in a given context, it will result in an error stopping the Action.
 
 Example:
 ```yml
-issue-title-template: "{t.language} translation: {t.translation_path}"
+issue-title-template: "{t.language} translation: {t.translation.path}"
 ```
 
 This would result in something like `"French translation: wiki/fr/README.md"`.
 
-**Note**: even though some keys are provided in some contexts, it doesn't mean they are always relevant.
+#### Github special arguments
+
+When updating Issues or Projects, special arguments are provided in addition to `t`.
+
+| Argument | Description | **To Create** | **To Initialize** | **To Update** | **Up-To-Date** | **Orphan** |
+| --- | --- | --- | --- | --- | --- | --- |
+| `original_url` | Github URL to original file (using commit rev) | X | X | X | X |  |
+| `raw_original_url` | Github URL to raw original file (using commit rev) | X | X | X | X |  |
+| `translation_url` | Github URL to translation file (using branch rev) |  | X | X | X | X |
+| `raw_translation_url` | Github URL to raw translation file (using commit rev) |  | X | X | X | X |
+| `base_original_url` | Github URL to base original file (using commit rev) |  |  | X |  |  |
+| `raw_base_original_url` | Github URL to raw base original file (using commit rev) |  |  | X |  |  |
+| `compare_url` | Github URL to Github comparison (using base_original and original commit rev) |  |  | X |  |  |
+
+Example for a translation file to update:
+```md
+Check what changed in `{t.original.path}` [**here**]({compare_url}).
+```
+
+Note that these new keys are provided outside of the `t` instance of `TranslationTrack`.
 
 ## Outputs
 
@@ -366,14 +348,11 @@ This would result in something like `"French translation: wiki/fr/README.md"`.
 JSON representation of tracked translation and original files, as a list of `TranslationTrack`.
 
 A **`TranslationTrack`** object contains:
-| Key | Value type | Description |
-| --- | --- | --- |
-| **`translation`** | `TranslationGitFile` object | Tracked translation file. |
-| **`original`** | `GitFile` object | Matching original file. |
-| **`status`** | string | Either `"To Create"`, `"To Initialize"`, `"To Update"`, `"Up-To-Date"`, `"Orphan"`. |
-
-Additional data may be provided according to a track status:
 | Status | Key | Value type | Description |
+| --- | --- | --- | --- |
+| All | **`translation`** | `TranslationGitFile` object | Tracked translation file. |
+| All | **`original`** | `GitFile` object | Matching original file. |
+| All | **`status`** | string | Either `"To Create"`, `"To Initialize"`, `"To Update"`, `"Up-To-Date"`, `"Orphan"`. |
 | `"To Create"` | **`missing_lines`** | integer | Number of missing lines in translation file, i.e actual number of lines in original file. |
 | `"To Initialize"` | **`missing_lines`** | integer | Number of missing lines in translation file, i.e actual number of lines in original file. |
 | `"To Update"` | **`base_original`** | `GitFile` object | Base original file used to update most recent translation file. |
@@ -382,9 +361,14 @@ Additional data may be provided according to a track status:
 | `"Orphan"` | **`deleted`** | boolean | Indicates whether the original file was deleted, or not (i.e it never existed). |
 | `"Orphan"` | **`surplus_lines`** | integer | Number of lines in excess, i.e actual number of lines in translation file. |
 
+Note that some data appears only for a specific status. When requesting a value from this object, say a [template](#about-templates), be sure to understand the context. Should it trigger for every tracks regardless of the status, don't use specific values.
+
 A **`GitFile`** object contains:
 | Key | Value type | Description |
+| --- | --- | --- |
 | **`path`** | string | Path to the file, relative to the git repository. |
+| **`filename`** | string | Name of the file. |
+| **`directory`** | string | File parent directory, relative to the git repository (might be "."). |
 | **`no_trace`** | boolean | Indicates whether the file doesn't exist in git commit history, or it does. |
 | **`commit`** | string or null | Sha-1 (40 hexadecimal characters) of the most recent commit modifying the file, null if `no_trace` is true. |
 | **`new_file`** | boolean | Indicates whether the file is a new file in commit, or not. |
@@ -396,16 +380,17 @@ A **`GitFile`** object contains:
 
 A **`TranslationGitFile`** object contains every items of a `GitFile` object, plus:
 | Key | Value type | Description |
-| **`lang_tag`** |  |  |
-| **`language`** |  |  |
+| --- | --- | --- |
+| **`lang_tag`** | string | Language tag, as of RFC5646 |
+| **`language`** | string | Language, as of RFC5646 |
 
-
-
-**`TranslationTrack`** values
-| Type | JSON Type
-
-
-You can [use this output in your workflow](https://help.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#fromjson) like so: ``
+A **`GitPatch`** object contains:
+| Key | Value type | Description |
+| --- | --- | --- |
+| **`diff`** | string | Literal git diff indicated what was changed. |
+| **`additions`** | integer | Number of lines added. |
+| **`deletions`** | integer | Number of lines deleted. |
+| **`changes`** | integer | Total number of lines changed. |
 
 Example:
 ```json
@@ -442,7 +427,9 @@ Example:
 ]
 ```
 
-**`open-issues`**
+You can use this output in other actions in your workflow using [the fromJSON expression](https://help.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#fromjson).
+
+### open-issues
 
 Comma-separated list containing open issue numbers (when a file requires updating, creation or initialization).
 
