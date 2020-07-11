@@ -66,7 +66,7 @@ jobs:
           instruct-issues: |
             *.md
           # Customized Issues title
-          issues-title-template: "Vuepress {t.language} Pages Tracker"
+          issues-title-template: "Vuepress {t.translation.language} Pages Tracker"
           # Instruct To Update and Up-To-Date translation tracks only in Issues
           issue-update-template: '.github/vuepress-update-tracker/issue-update-template.md'
           issue-card-uptodate-template: '.github/vuepress-update-tracker/issue-uptodate-template.md'

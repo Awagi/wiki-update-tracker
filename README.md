@@ -43,13 +43,14 @@ For the system to work efficiently, these assumptions are made and should be res
 
 ### New in v1.8
 
-- New input `auto-copy` in addition to `auto-create`.
-- New input `auto-branch` to 
-- **WARNING**: input `ignored-paths` was removed, replaced by `exclude`
-- **WARNING**: input `file-suffix` was removed, no replacement 
-- **WARNING**: input `update-issues` was removed, replaced by `globs`
-- **WARNING**: input `auto-create` was removed, replaced by `auto-create-globs` accepting glob patterns instead of simply enabling/disabling
-- **WARNING**: input `bot-label` was renamed to `issue-label`
+- New Orphan status when a translation file has no affiliated original file
+- More control on templates: set them directly in the workflow file or in files
+- Can now copy files (like images or videos)
+- Control which files to track, and then to generate and instruct using glob and fnmatch patterns
+- New feature to generate changes to another branch and making a pull request to merge to initial branch
+- Better documentation I guess
+- Code structure reviewed again along with better argument parsing
+- **WARNING**: a lot of inputs were changed and new ones were added, check inputs below
 
 ### New in v1.7
 - Github Projects is supported through input `update-projects`.
@@ -145,7 +146,7 @@ Then use this job in your workflow file:
     # This template will be provided a To Create translation track context + special stub arguments.
     #
     # Not required. Default: ''.
-    stub-template: '${{ GITHUB_WORKSPACE }}/.github/update-tracker/stub-template.md'
+    stub-template: '.github/update-tracker/stub-template.md'
 
     # Automatically copy original files to To Create translation files matching one of the given fnmatch patterns.
     # Checked-out repository must have be able to push to destination branch (defined by gen-branch parameter).
@@ -222,7 +223,7 @@ Then use this job in your workflow file:
     # This template will be provided a To Create translation track context + special GitHub arguments.
     #
     # Not required. Default: ''.
-    issue-create-template: '$GITHUB_WORKSPACE/.github/update-tracker/issue-create-template.md'
+    issue-create-template: .github/update-tracker/issue-create-template.md
 
     # The issue body template file for To Initialize translation files. This template parameter requires a file path containing the actual template.
     # More info about templates in the section below.
@@ -231,7 +232,7 @@ Then use this job in your workflow file:
     # This template will be provided a To Initialize translation track context + special GitHub arguments.
     #
     # Not required. Default: ''.
-    issue-initialize-template: '$GITHUB_WORKSPACE/.github/update-tracker/issue-init-template.md'
+    issue-initialize-template: .github/update-tracker/issue-init-template.md
 
     # The issue body template file for To Update translation files. This template parameter requires a file path containing the actual template.
     # More info about templates in the section below.
@@ -240,7 +241,7 @@ Then use this job in your workflow file:
     # This template will be provided a To Update translation track context + special GitHub arguments.
     #
     # Not required. Default: ''.
-    issue-update-template: 'GITHUB_WORKSPACE/.github/update-tracker/issue-update-template.md'
+    issue-update-template: .github/update-tracker/issue-update-template.md
 
     # The issue body template file for Up-To-Date translation files. This template parameter requires a file path containing the actual template.
     # More info about templates in the section below.
@@ -249,7 +250,7 @@ Then use this job in your workflow file:
     # This template will be provided a Up-To-Date translation track context + special GitHub arguments.
     #
     # Not required. Default: ''.
-    issue-uptodate-template: '$GITHUB_WORKSPACE/.github/update-tracker/issue-utd-template.md'
+    issue-uptodate-template: .github/update-tracker/issue-utd-template.md
 
     # The issue body template file for Orphan translation files. This template parameter requires a file path containing the actual template.
     # More info about templates in the section below.
@@ -258,7 +259,7 @@ Then use this job in your workflow file:
     # This template will be provided an Orphan translation track context + special GitHub arguments.
     #
     # Not required. Default: ''.
-    issue-orphan-template: '$GITHUB_WORKSPACE/.github/update-tracker/issue-orphan-template.md'
+    issue-orphan-template: .github/update-tracker/issue-orphan-template.md
 
     # Instruct translators on translation files matching one of the given fnmatch patterns through GitHub Projects.
     # The Github App token requires read/write access to Projects.
@@ -272,16 +273,16 @@ Then use this job in your workflow file:
     #
     # This template will be provided any translation track context regardless of status + special GitHub arguments.
     #
-    # Not required. Default: '{t.language} Update Tracker'.
-    project-title-template: '{t.language} Update Tracker'
+    # Not required. Default: '{t.translation.language} Update Tracker'.
+    project-title-template: '{t.translation.language} Update Tracker'
 
     # The project description template. Only used when the project is created.
     # More info about templates in the section below.
     #
     # This template will be provided any translation track context regardless of status + special GitHub arguments.
     #
-    # Not required. Default: '{t.language} translation effort.'.
-    project-description-template: '{t.language} translation effort.'
+    # Not required. Default: '{t.translation.language} translation effort.'.
+    project-description-template: '{t.translation.language} translation effort.'
 
     # The column template in project to include To Create translation file cards. This template parameter requires a file path containing the actual template.
     # More info about templates in the section below.
@@ -290,7 +291,7 @@ Then use this job in your workflow file:
     # This template will be provided a To Create translation track context + special GitHub arguments.
     #
     # Not required. Default: 'To Initialize'.
-    project-column-create-template: '$GITHUB_WORKSPACE/.github/update-tracker/column-create-template.md'
+    project-column-create-template: 'To Initialize'
 
     # The column template in project to include To Initialize translation file cards. This template parameter requires a file path containing the actual template.
     # More info about templates in the section below.
@@ -299,7 +300,7 @@ Then use this job in your workflow file:
     # This template will be provided a To Initialize translation track context + special GitHub arguments.
     #
     # Not required. Default: 'To Initialize'.
-    project-column-initialize-template: '$GITHUB_WORKSPACE/.github/update-tracker/column-init-template.md'
+    project-column-initialize-template: 'To Initialize'
 
     # The column template in project to include To Update translation file cards. This template parameter requires a file path containing the actual template.
     # More info about templates in the section below.
@@ -308,7 +309,7 @@ Then use this job in your workflow file:
     # This template will be provided a To Update translation track context + special GitHub arguments.
     #
     # Not required. Default: 'To Update'.
-    project-column-update-template: '$GITHUB_WORKSPACE/.github/update-tracker/column-update-template.md'
+    project-column-update-template: 'To Update'
 
     # The column template in project to include Up-To-Date translation file cards. This template parameter requires a file path containing the actual template.
     # More info about templates in the section below.
@@ -317,7 +318,7 @@ Then use this job in your workflow file:
     # This template will be provided a Up-To-Date translation track context + special GitHub arguments.
     #
     # Not required. Default: 'Up-To-Date'.
-    project-column-uptodate-template: '$GITHUB_WORKSPACE/.github/update-tracker/column-utd-template.md'
+    project-column-uptodate-template: 'Up-To-Date'
 
     # The column template in project to include Orphan translation file cards. This template parameter requires a file path containing the actual template.
     # More info about templates in the section below.
@@ -326,7 +327,7 @@ Then use this job in your workflow file:
     # This template will be provided an Orphan translation track context + special GitHub arguments.
     #
     # Not required. Default: 'Orphans'.
-    project-column-orphan-template: '$GITHUB_WORKSPACE/.github/update-tracker/column-orphan-template.md'
+    project-column-orphan-template: 'Orphans'
 
     # The card template file in project column for To Create translation files. This template parameter requires a file path containing the actual template.
     # More info about templates in the section below.
@@ -336,7 +337,7 @@ Then use this job in your workflow file:
     # This template will be provided a To Create translation track context + special GitHub arguments.
     #
     # Not required. Default: ''.
-    project-card-create-template: '$GITHUB_WORKSPACE/.github/update-tracker/card-create-template.md'
+    project-card-create-template: .github/update-tracker/card-create-template.md
 
     # The card template file in project column for To Initialize translation files. This template parameter requires a file path containing the actual template.
     # More info about templates in the section below.
@@ -346,7 +347,7 @@ Then use this job in your workflow file:
     # This template will be provided a To Initialize translation track context + special GitHub arguments.
     #
     # Not required. Default: ''.
-    project-card-initialize-template: '$GITHUB_WORKSPACE/.github/update-tracker/card-init-template.md'
+    project-card-initialize-template: .github/update-tracker/card-init-template.md
 
     # The card template file in project column for To Update translation files. This template parameter requires a file path containing the actual template.
     # More info about templates in the section below.
@@ -356,7 +357,7 @@ Then use this job in your workflow file:
     # This template will be provided a To Update translation track context + special GitHub arguments.
     #
     # Not required. Default: ''.
-    project-card-update-template: '$GITHUB_WORKSPACE/.github/update-tracker/card-update-template.md'
+    project-card-update-template: .github/update-tracker/card-update-template.md
 
     # The card template file in project column for Up-To-Date translation files. This template parameter requires a file path containing the actual template.
     # More info about templates in the section below.
@@ -366,7 +367,7 @@ Then use this job in your workflow file:
     # This template will be provided a Up-To-Date translation track context + special GitHub arguments.
     #
     # Not required. Default: ''.
-    project-card-uptodate-template: '$GITHUB_WORKSPACE/.github/update-tracker/card-utd-template.md'
+    project-card-uptodate-template: .github/update-tracker/card-utd-template.md
 
     # The card template file in project column for Orphan translation files. This template parameter requires a file path containing the actual template.
     # More info about templates in the section below.
@@ -376,7 +377,7 @@ Then use this job in your workflow file:
     # This template will be provided an Orphan translation track context + special GitHub arguments.
     #
     # Not required. Default: ''.
-    project-card-orphan-template: '$GITHUB_WORKSPACE/.github/update-tracker/card-orphan-template.md'
+    project-card-orphan-template: .github/update-tracker/card-orphan-template.md
 ```
 
 You might also find useful these **[examples](#use-case-examples)**.
@@ -395,7 +396,7 @@ If the argument doesn't exist in a given context, it will result in an error sto
 
 Example:
 ```yml
-issue-title-template: "{t.language} translation: {t.translation.path}"
+issue-title-template: "{t.translation.language} translation: {t.translation.path}"
 ```
 
 This would result in something like `"French translation: wiki/fr/README.md"`.

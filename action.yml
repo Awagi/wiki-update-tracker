@@ -102,11 +102,11 @@ inputs:
   project-title-template:
     description: 'The project name template - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
     required: false
-    default: '{t.language} Update Tracker'
+    default: '{t.translation.language} Update Tracker'
   project-description-template:
     description: 'The project description template when it is created - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
     required: false
-    default: '{t.language} translation effort.'
+    default: '{t.translation.language} translation effort.'
   project-column-create-template:
     description: 'The column template in project to include To Create translation file cards - more info about templates here: https://github.com/Awagi/wiki-update-tracker#about-templates'
     required: false
