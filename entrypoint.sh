@@ -42,14 +42,6 @@ arg_projectcarduptodatetemplate=${35}  # 35) project-card-uptodate-template
 arg_projectcardorphantemplate=${36}  # 36) project-card-orphan-template
 
 # build arguments for script
-# set positional arguments
-args="$args $arg_original"
-IFS='\n' read -ra array_translations <<< "${arg_translations}"
-for x in ${array_translations[@]}; do
-    translations="$translations \"$x\""
-done
-args="$args$translations"
-
 # set optional arguments
 [ -n "$arg_loglevel" ] && args="$args -l \"$arg_loglevel\""
 [ -n "$arg_repopath" ] && args="$args -r \"$arg_repopath\""
@@ -115,6 +107,14 @@ fi
 [ -n "$arg_projectcardupdatetemplate" ] && args="$args --project-card-update-template \"$arg_projectcardupdatetemplate\""
 [ -n "$arg_projectcarduptodatetemplate" ] && args="$args --project-card-uptodate-template \"$arg_projectcarduptodatetemplate\""
 [ -n "$arg_projectcardorphantemplate" ] && args="$args --project-card-orphan-template \"$arg_projectcardorphantemplate\""
+
+# set positional arguments
+args="$args $arg_original"
+IFS='\n' read -ra array_translations <<< "${arg_translations}"
+for x in ${array_translations[@]}; do
+    translations="$translations \"$x\""
+done
+args="$args$translations"
 
 echo "$cmd$args"
 
