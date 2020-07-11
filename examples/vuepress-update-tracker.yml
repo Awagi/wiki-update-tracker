@@ -14,8 +14,7 @@ jobs:
       # Yet it is not mandatory as Github Actions create a dummy ready-to-use token with too much permissions granted.
       # The Github App should have:
       # - read/write access to Pull requests
-      # - read/write access to Projects
-      # - read/write access to Contents
+      # - read/write access to Issues
       # and should be installed on the repository
       - name: Get custom App JWT
         id: get_token
@@ -33,39 +32,41 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.get_token.outputs.app_token }}
 
-      - name: Check original pages status and update translation Projects
+      - name: Check original pages status and update translation Issues
         uses: Awagi/wiki-update-tracker@v1.8
         with:
           # Checked-out repo path
           repo-path: $GITHUB_WORKSPACE
+
           # BACKTRACKING
           # Original pages are in 'docs' within the repository
-          original-path: "docs/**"
+          original: "docs"
           # Translation pages are in 'docs/zh' within the repository, language tag is 'zh', same with 'fr'
           translations: |
-            zh:docs/zh/**
-            fr:docs/fr/**
-          # Exclude every files within 'docs/.vuepress', a folder that is likely to be placed here in vuepress
-          exclude: |
-            docs/.vuepress/**
+            zh:docs/zh
+            fr:docs/fr
           # AUTO GENERATION
           # The script will commit to a dedicated branch named bot-branch, and request merging with checked-out repository active branch
-          branch-gen: "bot-branch"
+          gen-branch: "bot-branch"
           # Automatically create '.md' missing ("To Create") translation pages
           gen-stubs: |
             *.md
           # Custom template as content for created stubs, with Front Matter header
-          stub-template: .github/vuepress-update-tracker/stub-template.md
+          stub-template: '.github/vuepress-update-tracker/stub-template.md'
           # Automatically copy missing translation files (like images, videos, etc.), non-'.md' files because gen-stubs occurs before. Copy from original file
           gen-copy: |
             *
+
           # INSTRUCTING
           # See recommended step described above.
           token: ${{ steps.get_token.outputs.app_token }}
-          # Make a Pull Request to propose changes made in branch-gen
+          # Make a Pull Request to propose changes made in gen-branch
           request-merge: 'true'
-          # Instruct using Github Projects for .md files only
-          instruct-projects: |
+          # Instruct using Github Issues for .md files only
+          instruct-issues: |
             *.md
-          # Customized Project title
-          project-title-template: "Vuepress {t.language} Pages Tracker"
+          # Customized Issues title
+          issues-title-template: "Vuepress {t.language} Pages Tracker"
+          # Instruct To Update and Up-To-Date translation tracks only in Issues
+          issue-update-template: '.github/vuepress-update-tracker/issue-update-template.md'
+          issue-card-uptodate-template: '.github/vuepress-update-tracker/issue-uptodate-template.md'

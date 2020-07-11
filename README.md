@@ -74,232 +74,312 @@ translation-done: false
 
 Pre-requisite is a checked-out git repository set up on the active branch you want to track (use [checkout](https://github.com/actions/checkout)).
 
-Then use this job in your workflow file (you might find useful these [examples](#use-case-examples)):
+Then use this job in your workflow file:
 
 ```yml
 - uses: Awagi/wiki-update-tracker@v1.8
   with:
+    # The python script log level, either CRITICAL, ERROR, WARNING, INFO, DEBUG or NOTSET.
+    # Change it for more or less verbosity in the Action.
     #
-    #
-    repo-path: ''
+    # Not required. Default: 'INFO'.
+    log-level: 'INFO'
 
-    #
-    #
-    original-path: ''
+    # 1) TRACKER
 
+    # The local path of the checked-out git repository, make sure you checkout on the desired branch.
     #
-    #
-    ignored-paths: ''
+    # REQUIRED.
+    repo-path: '.'
 
+    # Path to the directory containing original files, relative to repo-path.
     #
-    #
-    translations: ''
+    # REQUIRED.
+    original: 'docs'
 
+    # Paths to the directories containing translation files, relative to repo-path, along with their associated language tag.
+    # Language tag must respect RFC5646.
     #
-    #
-    repository: ''
+    # REQUIRED.
+    translations: |
+      fr:docs/fr
+      cs:docs/cs
 
+    # Glob patterns matching files to track within original path and translation paths.
+    # You may want to keep track of only text files like .md or so.
+    # These filters are used in original path and in translations path to check which files exist and their corresponding original/translation.
+    # Note: files or directories starting with a '.' won't be included as it is a tradition from glob. If you need so, you should explicitly include these in filters.
+    # More info about glob patterns: https://docs.python.org/3.6/library/glob.html
     #
-    #
-    file-suffix: ''
+    # Not required. Default: '**/*'.
+    filters: |
+      **/*.md
+      **/*.png
 
+    # Glob patterns matching files to ignore when parsing original files, relative to repo-path.
+    # If a translation or original file matches a filter from the above filters, it will still be ignored if matching one of these patterns.
+    # More info about glob patterns: https://docs.python.org/3.6/library/glob.html
     #
-    #
+    # Not required. Default: ''.
+    ignores: |
+      **/README.md
 
+  # 2) GENERATION
+
+    # Automatically create stubs for To Create translation files matching one of the given fnmatch patterns, with content defined by stub-template.
+    # Checked-out repository must have be able to push to destination branch (defined by gen-branch parameter).
+    # More info about fnmatch patterns: https://docs.python.org/3.6/library/fnmatch.html
+    #
+    # Not required. Default: ''.
+    gen-stubs: |
+      *.md
+
+    # The commit message when generating stub files.
+    #
+    # Not required. Default: ':tada: Created stub translation files'.
+    stub-commit: ':tada: Created stub translation files'
+
+    # Template file defining the content of generated stub files. This template parameter requires a file path containing the actual template.
+    # More info about templates in the section below.
+    #
+    # This template will be provided a To Create translation track context + special stub arguments.
+    #
+    # Not required. Default: ''.
+    stub-template: '${{ GITHUB_WORKSPACE }}/.github/update-tracker/stub-template.md'
+
+    # Automatically copy original files to To Create translation files matching one of the given fnmatch patterns.
+    # Checked-out repository must have be able to push to destination branch (defined by gen-branch parameter).
+    # More info about fnmatch patterns: https://docs.python.org/3.6/library/fnmatch.html
+    #
+    # Not required. Default: ''.
+    gen-copy: |
+      *.png
+
+    # The commit message when generating file copies.
+    #
+    # Not required. Default: ':tada: Copied original to translation files'.
+    copy-commit: ':tada: Copied original to translation files'
+
+    # The branch where files will be pushed when auto generating changes.
+    # If it is not set, files will be committed to the checked-out repository active branch.
+    # The actual destination branch, whether it is another branch or the active checked-out branch, must exist and be not branch-protected.
+    #
+    # Note that if the destination branch is another branch than the active branch, it will always be rebased on the active branch HEAD when the Action triggers and new files are generated.
+    # This means you may lose any changes made to this specific branch, you shouldn't use it for other purposes.
+    #
+    # Not required. Default: ''.
+    gen-branch: 'genbranch'
+
+    # 3) INSTRUCTING
+
+    # The GitHub repository where you want to instruct tracked and generated changes, in the form "Author/repo".
+    #
+    # Not required. Default: '${{ github.repository }}'.
+    repository: '${{ github.repository }}'
+
+    # The authorization token to instruct Issues, Projects and Pull requests.
+    # You should make sure the GitHub App this token gives access to has enough permissions to update what you set.
+    #
+    # Also, it is recommended to use your own installation of a GitHub App instead of GitHub Actions provided to strictly define the least permission required.
+    # Building GitHub Apps: https://developer.github.com/apps/building-github-apps/
+    #
+    # Not required. Default: '${{ github.token }}'.
+    token: '${{ github.token }}'
+
+    # Request merging gen-branch (if the parameter is set and if changes were applied) to checked-out repository active branch through a Pull Request.
+    # The GitHub App token requires read/write access to Pull Requests.
+    #
+    # Beware: if repository is defined as another repository than the git repo were changes were pushed, requesting merge as Pull Request will fail.
+    #
+    # Not required. Default: 'false'.
+    request-merge: 'true'
+
+    # Instruct translators on translation files matching one of the given fnmatch patterns through GitHub Issues.
+    # The GitHub App token requires read/write access to Issues.
+    #
+    # Not required. Default: ''
+    instruct-issues: |
+      *.md
+
+    # The label name to manage issues, issues not labelled with it won't be processed.
+    #
+    # Not required. Default: 'translation-tracker'.
+    issue-label: 'translation-tracker'
+
+    # The issue title template.
+    # As the resulting issue title must be unique, the template should include {t.translation.path}.
+    # More info about templates in the section below.
+    #
+    # This template will be provided any translation track context regardless of status + special GitHub arguments.
+    #
+    # Not required. Default: 'Translation file: {t.translation.path}'.
+    issue-title-template: 'Translation file: {t.translation.path}'
+
+    # The issue body template file for To Create translation files. This template parameter requires a file path containing the actual template.
+    # More info about templates in the section below.
+    # If not set, To Initialize translation tracks won't be instructed in Issues.
+    #
+    # This template will be provided a To Create translation track context + special GitHub arguments.
+    #
+    # Not required. Default: ''.
+    issue-create-template: '$GITHUB_WORKSPACE/.github/update-tracker/issue-create-template.md'
+
+    # The issue body template file for To Initialize translation files. This template parameter requires a file path containing the actual template.
+    # More info about templates in the section below.
+    # If not set, To Initialize translation tracks won't be instructed in Issues.
+    #
+    # This template will be provided a To Initialize translation track context + special GitHub arguments.
+    #
+    # Not required. Default: ''.
+    issue-initialize-template: '$GITHUB_WORKSPACE/.github/update-tracker/issue-init-template.md'
+
+    # The issue body template file for To Update translation files. This template parameter requires a file path containing the actual template.
+    # More info about templates in the section below.
+    # If not set, To Update translation tracks won't be instructed in Issues.
+    #
+    # This template will be provided a To Update translation track context + special GitHub arguments.
+    #
+    # Not required. Default: ''.
+    issue-update-template: 'GITHUB_WORKSPACE/.github/update-tracker/issue-update-template.md'
+
+    # The issue body template file for Up-To-Date translation files. This template parameter requires a file path containing the actual template.
+    # More info about templates in the section below.
+    # If not set, Up-To-Date translation tracks won't be instructed in Issues.
+    #
+    # This template will be provided a Up-To-Date translation track context + special GitHub arguments.
+    #
+    # Not required. Default: ''.
+    issue-uptodate-template: '$GITHUB_WORKSPACE/.github/update-tracker/issue-utd-template.md'
+
+    # The issue body template file for Orphan translation files. This template parameter requires a file path containing the actual template.
+    # More info about templates in the section below.
+    # If not set, Orphan translation tracks won't be instructed in Issues.
+    #
+    # This template will be provided an Orphan translation track context + special GitHub arguments.
+    #
+    # Not required. Default: ''.
+    issue-orphan-template: '$GITHUB_WORKSPACE/.github/update-tracker/issue-orphan-template.md'
+
+    # Instruct translators on translation files matching one of the given fnmatch patterns through GitHub Projects.
+    # The Github App token requires read/write access to Projects.
+    #
+    # Not required. Default: ''.
+    instruct-projects: |
+      *.md
+
+    # The project name template.
+    # More info about templates in the section below.
+    #
+    # This template will be provided any translation track context regardless of status + special GitHub arguments.
+    #
+    # Not required. Default: '{t.language} Update Tracker'.
+    project-title-template: '{t.language} Update Tracker'
+
+    # The project description template. Only used when the project is created.
+    # More info about templates in the section below.
+    #
+    # This template will be provided any translation track context regardless of status + special GitHub arguments.
+    #
+    # Not required. Default: '{t.language} translation effort.'.
+    project-description-template: '{t.language} translation effort.'
+
+    # The column template in project to include To Create translation file cards. This template parameter requires a file path containing the actual template.
+    # More info about templates in the section below.
+    # If not set, To Create translation tracks won't be instructed in Projects.
+    #
+    # This template will be provided a To Create translation track context + special GitHub arguments.
+    #
+    # Not required. Default: 'To Initialize'.
+    project-column-create-template: '$GITHUB_WORKSPACE/.github/update-tracker/column-create-template.md'
+
+    # The column template in project to include To Initialize translation file cards. This template parameter requires a file path containing the actual template.
+    # More info about templates in the section below.
+    # If not set, To Initialize translation tracks won't be instructed in Projects.
+    #
+    # This template will be provided a To Initialize translation track context + special GitHub arguments.
+    #
+    # Not required. Default: 'To Initialize'.
+    project-column-initialize-template: '$GITHUB_WORKSPACE/.github/update-tracker/column-init-template.md'
+
+    # The column template in project to include To Update translation file cards. This template parameter requires a file path containing the actual template.
+    # More info about templates in the section below.
+    # If not set, To Update translation tracks won't be instructed in Projects.
+    #
+    # This template will be provided a To Update translation track context + special GitHub arguments.
+    #
+    # Not required. Default: 'To Update'.
+    project-column-update-template: '$GITHUB_WORKSPACE/.github/update-tracker/column-update-template.md'
+
+    # The column template in project to include Up-To-Date translation file cards. This template parameter requires a file path containing the actual template.
+    # More info about templates in the section below.
+    # If not set, Up-To-Date translation tracks won't be instructed in Projects.
+    #
+    # This template will be provided a Up-To-Date translation track context + special GitHub arguments.
+    #
+    # Not required. Default: 'Up-To-Date'.
+    project-column-uptodate-template: '$GITHUB_WORKSPACE/.github/update-tracker/column-utd-template.md'
+
+    # The column template in project to include Orphan translation file cards. This template parameter requires a file path containing the actual template.
+    # More info about templates in the section below.
+    # If not set, Orphan translation tracks won't be instructed in Projects.
+    #
+    # This template will be provided an Orphan translation track context + special GitHub arguments.
+    #
+    # Not required. Default: 'Orphans'.
+    project-column-orphan-template: '$GITHUB_WORKSPACE/.github/update-tracker/column-orphan-template.md'
+
+    # The card template file in project column for To Create translation files. This template parameter requires a file path containing the actual template.
+    # More info about templates in the section below.
+    # If not set, To Create translation tracks won't be instructed in Projects.
+    # Also, a note in a card is limited to 1024 characters.
+    #
+    # This template will be provided a To Create translation track context + special GitHub arguments.
+    #
+    # Not required. Default: ''.
+    project-card-create-template: '$GITHUB_WORKSPACE/.github/update-tracker/card-create-template.md'
+
+    # The card template file in project column for To Initialize translation files. This template parameter requires a file path containing the actual template.
+    # More info about templates in the section below.
+    # If not set, To Initialize translation tracks won't be instructed in Projects.
+    # Also, a note in a card is limited to 1024 characters.
+    #
+    # This template will be provided a To Initialize translation track context + special GitHub arguments.
+    #
+    # Not required. Default: ''.
+    project-card-initialize-template: '$GITHUB_WORKSPACE/.github/update-tracker/card-init-template.md'
+
+    # The card template file in project column for To Update translation files. This template parameter requires a file path containing the actual template.
+    # More info about templates in the section below.
+    # If not set, To Update translation tracks won't be instructed in Projects.
+    # Also, a note in a card is limited to 1024 characters.
+    #
+    # This template will be provided a To Update translation track context + special GitHub arguments.
+    #
+    # Not required. Default: ''.
+    project-card-update-template: '$GITHUB_WORKSPACE/.github/update-tracker/card-update-template.md'
+
+    # The card template file in project column for Up-To-Date translation files. This template parameter requires a file path containing the actual template.
+    # More info about templates in the section below.
+    # If not set, Up-To-Date translation tracks won't be instructed in Projects.
+    # Also, a note in a card is limited to 1024 characters.
+    #
+    # This template will be provided a Up-To-Date translation track context + special GitHub arguments.
+    #
+    # Not required. Default: ''.
+    project-card-uptodate-template: '$GITHUB_WORKSPACE/.github/update-tracker/card-utd-template.md'
+
+    # The card template file in project column for Orphan translation files. This template parameter requires a file path containing the actual template.
+    # More info about templates in the section below.
+    # If not set, Orphan translation tracks won't be instructed in Projects.
+    # Also, a note in a card is limited to 1024 characters.
+    #
+    # This template will be provided an Orphan translation track context + special GitHub arguments.
+    #
+    # Not required. Default: ''.
+    project-card-orphan-template: '$GITHUB_WORKSPACE/.github/update-tracker/card-orphan-template.md'
 ```
 
-**`repo-path`**
-
-The path where the git repo is located within the filesystem.
-
-Example: `${GITHUB_WORKSPACE}`
-
-**`original-path`**
-
-The original pages path. It can be a file or a directory.
-
-If a translation path given in `translations` is part of the `original-path` subdirectories, it will only be treated as translation files.
-
-It must be given relatively to the git repo root path.
-
-Example: `wiki`
-
-**`ignored-paths`**
-
-A blacklist to mark unassociated directories and files within the original pages path.
-
-These must be given relatively to the git repo root path.
-
-Example: `wiki/LICENSE,wiki/.vuepress`
-
-**`translations`**
-
-The translation pages relative paths and their associated language tag. You may have different paths for translation, but each must follow the same structure as the original pages path.
-
-These must be given relatively to the git repo root path. Language tags are defined in [RFC 5646](https://tools.ietf.org/html/rfc5646).
-
-**`repository`**
-
-The GitHub repository in the form `Author/repo`, used to update issues. Defaults to `${{ github.repository }}`.
-
-**`file-suffix`**
-
-The file suffix (or extension) used to identify Wiki page. Defaults to `.md`.
-
-**`token`**
-
-The job's access token, given with `${{ secrets.GITHUB_TOKEN }}` or other means to restrict to least-privilege permissions (recommended).
-
-[More info](https://help.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token).
-
-**`log-level`**
-
-The Python script's log level. It can be `DEBUG`, `INFO`, `WARNING` or `CRITICAL`. Defaults to `INFO`.
-
-[More info](https://docs.python.org/3/library/logging.html).
-
-**`auto-create`**
-
-Automatically create stub files for non-existent translation files matching given patterns. Includes a templated content containing the `translation-done: false` header, for To Be Initialized status.
-
-The Action will commit through git and push to Github repo on the branch `auto-branch`. As such, checked-out repository must have read/write access to Contents.
-
-The value is a comma-separated list of [glob patterns](https://en.wikipedia.org/wiki/Glob_%28programming%29).
-
-**`auto-copy`**
-
-Automatically copy original files into non-existent corresponding translation file matching given patterns.
-
-Copied files won't be considered for translation, use this for static files that don't require translation.
-
-This function occurs after `auto-create`, so "To Create" translation files matching both create and copy globs pattern will only be created, not copied.
-
-The Action will commit through git and push to Github repo on the branch `auto-branch`. As such, checked-out repository must have read/write access to Contents.
-
-The value is a comma-separated list of [glob patterns](https://en.wikipedia.org/wiki/Glob_%28programming%29).
-
-**`auto-branch`**
-
-**`request-merge`**
-
-Enable with "1" or "true".
-
-**`update-issues-glob`**
-
-Enable Github Issues update.
-It can be `true`, `1`, `yes` to enable issues update or `false`, `0`, `no` to disable issues update.
-
-The 
-
-**`issue-label`**
-
-The Github label used to track managed issues. Issues with this label will be seen by the script, other will be out of scope.
-
-Required when `update-issues` is enabled.
-
-[More info](https://help.github.com/en/github/managing-your-work-on-github/about-labels).
-
-**`issue-title-template`**
-
-The issue title [template](#about-templates).
-
-As the resulting issue title is used as an identifier for a particular translation file, it must be unique. So your template must contain `{t.translation_path}`.
-
-**`issue-create-template`**
-
-The issue body [template](#about-templates) for "To Create" translation files.
-
-**`issue-initialize-template`**
-
-The issue body [template](#about-templates) for "To Initialize" translation files.
-
-**`issue-update-template`**
-
-The issue body [template](#about-templates) for "To Update" translation files.
-
-**`issue-uptodate-template`**
-
-The issue body [template](#about-templates) for "Up-To-Date" translation files.
-
-**`issue-orphan-template`**
-
-The issue body [template](#about-templates) for "Orphan" translation files.
-
-**`update-projects-glob`**
-
-
-Enable Github Projects update. When a project isn't found, it is created.
-
-It can be `true`, `1`, `yes` to enable projects update or `false`, `0`, `no` to disable projects update.
-
-**`project-title-template`**
-
-The project name [template](#about-templates).
-
-You can easily filter your projects with this template. For example, the default template creates a project for every languages.
-
-**`project-description-template`**
-
-The project description [template](#about-templates).
-
-The resulting description is only set to a project it is created, the Action does not update it.
-
-**`project-column-create-template`**
-
-The column name [template](#about-templates) in project to include "To Create" translation file cards.
-
-You can easily filter your columns with these templates.
-For example setting the same column name for `project-column-create-template` and `project-column-initialize-template` will make only one column and put all "To Create" and "To Initialize" translation file cards in it.
-
-**`project-column-initialize-template`**
-
-The column [template](#about-templates) in project to include "To Initialize" translation file cards.
-
-**`project-column-update-template`**
-
-The column [template](#about-templates) in project to include "To Update" translation file cards.
-
-**`project-column-uptodate-template`**
-
-The column [template](#about-templates) in project to include "Up-To-Date" translation file cards.
-
-**`project-column-orphan-template`**
-
-The column [template](#about-templates) in project to include "Orphan" translation file cards.
-
-**`project-card-create-template`**
-
-The card [template](#about-templates) in project column for "To Create" translation files.
-
-The resulting card content must be unique, keep `{t.translation_path}` in the template.
-
-These cards will be put in `project-column-create-template` column.
-
-**`project-card-initialize-template`**
-
-The card [template](#about-templates) in project column for "To Initialize" translation files.
-
-The resulting card content must be unique, keep `{t.translation_path}` in the template.
-
-These cards will be put in `project-column-initiliaze-template` column.
-
-**`project-card-update-template`**
-
-The card [template](#about-templates) in project column for "To Update" translation files.
-
-The resulting card content must be unique, keep `{t.translation_path}` in the template.
-
-**`project-card-uptodate-template`**
-
-The card [template](#about-templates) in project column for "Up-To-Date" translation files.
-
-The resulting card content must be unique, keep `{t.translation_path}` in the template.
-
-**`project-card-orphan-template`**
-
-The card [template](#about-templates) in project column for "Orphan" translation files.
-
-The resulting card content must be unique, keep `{t.translation_path}` in the template.
+You might also find useful these **[examples](#use-case-examples)**.
 
 ### About Templates
 
@@ -320,19 +400,19 @@ issue-title-template: "{t.language} translation: {t.translation.path}"
 
 This would result in something like `"French translation: wiki/fr/README.md"`.
 
-#### Github special arguments
+#### GitHub special arguments
 
 When updating Issues or Projects, special arguments are provided in addition to `t`.
 
 | Argument | Description | **To Create** | **To Initialize** | **To Update** | **Up-To-Date** | **Orphan** |
 | --- | --- | --- | --- | --- | --- | --- |
-| `original_url` | Github URL to original file (using commit rev) | X | X | X | X |  |
-| `raw_original_url` | Github URL to raw original file (using commit rev) | X | X | X | X |  |
-| `translation_url` | Github URL to translation file (using branch rev) |  | X | X | X | X |
-| `raw_translation_url` | Github URL to raw translation file (using commit rev) |  | X | X | X | X |
-| `base_original_url` | Github URL to base original file (using commit rev) |  |  | X |  |  |
-| `raw_base_original_url` | Github URL to raw base original file (using commit rev) |  |  | X |  |  |
-| `compare_url` | Github URL to Github comparison (using base_original and original commit rev) |  |  | X |  |  |
+| **`original_url`** | Github URL to original file (using commit rev) | X | X | X | X |  |
+| **`raw_original_url`** | Github URL to raw original file (using commit rev) | X | X | X | X |  |
+| **`translation_url`** | Github URL to translation file (using branch rev) |  | X | X | X | X |
+| **`raw_translation_url`** | Github URL to raw translation file (using commit rev) |  | X | X | X | X |
+| **`base_original_url`** | Github URL to base original file (using commit rev) |  |  | X |  |  |
+| **`raw_base_original_url`** | Github URL to raw base original file (using commit rev) |  |  | X |  |  |
+| **`compare_url`** | Github URL to Github comparison (using base_original and original commit rev) |  |  | X |  |  |
 
 Example for a translation file to update:
 ```md
@@ -340,6 +420,10 @@ Check what changed in `{t.original.path}` [**here**]({compare_url}).
 ```
 
 Note that these new keys are provided outside of the `t` instance of `TranslationTrack`.
+
+#### Stub special arguments
+
+When generating stub files, a special argument is provided in addition to `t`: **`translation_to_original_path`**. It's the relative path from the translation file parent directory to the original file.
 
 ## Outputs
 

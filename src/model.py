@@ -173,7 +173,7 @@ class StubTemplate(Template):
         :rtype: dict
         """
         return {
-            "translation_to_original_path": Path(os.path.relpath(track.original.path, track.translation.track.parent)).as_posix()
+            "translation_to_original_path": Path(os.path.relpath(track.original.path, track.translation.path.parent)).as_posix()
         }
 
 

@@ -13,13 +13,7 @@ from github import (
     RateLimitExceededException,
     UnknownObjectException
 )
-from constants import (
-    GIT_AUTHOR,
-    GIT_AUTHOR_EMAIL,
-    GIT_COMMITTER,
-    GIT_COMMITTER_EMAIL,
-    RFC5646_LANGUAGE_TAGS
-)
+from constants import RFC5646_LANGUAGE_TAGS
 from tracker import (
     TranslationTracker,
     Status
@@ -36,7 +30,6 @@ from instructor import (
     ProjectsInstructor
 )
 
-import re
 import traceback
 import argparse
 import json
@@ -97,7 +90,7 @@ class GithubArg(argparse.Action):
         :param argparse.ArgumentParser parser: the parser
         :param argparse.Namespace namespace: namespace which will be returned by argparse
         :param values: 2 values list, the first contains the Github repository formatted like 'Owner/Repository', the second is the access token
-        :type token_str: list(str)
+        :type values: list(str)
         :param option_string: unused value
         :raise argparse.ArgumentTypeError: when access token is a bad credential
         :raise argparse.ArgumentTypeError: when Github rate limit is reached
@@ -123,22 +116,33 @@ class GithubArg(argparse.Action):
             raise argparse.ArgumentTypeError(msg)
 
 
-def arg_branch(string):
+def ActorArg(dest):
     """
-    Defines a valid branch name argument using regex.
+    Factory for an Actor argument. Specify the destination to ``argparse.Namespace`` and get the ``argparse.Action`` argument definer.
 
-    :param str string: the branch name
-    :return: string
-    :rtype: str
-    :raise argparse.ArgumentTypeError: when string doesn't match a branch name
+    :param str dest: the attribute destination in the namespace to hold the Actor after the action is called when parsing args
+    :return: the action class
+    :rtype: ActorArgClass
     """
-    # seen here https://stackoverflow.com/a/12093994
-    BRANCH_PATTERN = r"^(?!@$|/|.*([/.]\.|//|@\{|\\))[^\000-\037\177 ~^:?*[]+/[^\000-\037\177 ~^:?*[]+(?<!\.lock|[/.])$"
-    if re.match(BRANCH_PATTERN, string):
-        return string
-    else:
-        msg = "{} is not a valid branch name".format(string)
-        raise argparse.ArgumentTypeError(msg)
+    class ActorArgClass(argparse.Action):
+        """
+        Defines an ``github.Actor`` argument to pass through arparse.
+        """
+        def __call__(self, parser, namespace, values, option_string=None):
+            """
+            This argparse action sets the ``dest`` str attribute as an ``github.Actor`` in the namespace from a name and an e-mail as values.
+
+            :param argparse.ArgumentParser parser: the parser
+            :param argparse.Namespace namespace: namespace which will be returned by argparse
+            :param values: 2 values list, the first contains the name of the actor, the second is the email address
+            :type values: list(str)
+            :param option_string: unused value
+            """
+            name = values[0]
+            email = values[1]
+            namespace.__setattr__(dest, Actor(name, email))
+
+    return ActorArgClass
 
 
 def arg_stub_template_file(string):
@@ -233,9 +237,17 @@ if __name__ == '__main__':
                         help="output file")
     # Auto generation args
     gen_group = parser.add_argument_group("auto generation", "Auto generate files according to backtracking")
-    gen_group.add_argument('--branch-gen', dest='gen_branch', action='store',
-                           type=arg_branch, metavar='BRANCH',
+    gen_group.add_argument('--gen-branch', dest='gen_branch', action='store',
+                           type=str, metavar='BRANCH',
                            help="branch to commit generated files")
+    gen_group.add_argument('--request-merge', dest='request_merge', action='store_true',
+                           help="make a Pull Request to merge gen-branch if different than active branch and files were generated")
+    gen_group.add_argument('--gen-committer', dest='gen_committer', action=ActorArg("gen_committer"),
+                           type=str, default=Actor('bot', 'bot@example.com'), nargs=2, metavar=('NAME', 'EMAIL'),
+                           help="committer defined when committing generated files")
+    gen_group.add_argument('--gen-author', dest='gen_author', action=ActorArg("gen_author"),
+                           type=str, default=Actor('bot', 'bot@example.com'), nargs=2, metavar=('NAME', 'EMAIL'),
+                           help="author defined when committing generated files")
     gen_group.add_argument('--gen-stubs', dest='gen_stubs', action='store',
                            type=str, nargs='+', metavar='FNMATCH',
                            help="fnmatch patterns for missing translation files to generate stubs")
@@ -256,8 +268,6 @@ if __name__ == '__main__':
     instruct_group.add_argument('--github', dest='github_repo', action=GithubArg,
                                 type=str, nargs=2, metavar=('REPO', 'TOKEN'),
                                 help="github repo such as 'Owner/Repo' with access token")
-    instruct_group.add_argument('--request-merge', dest='request_merge', action='store_true',
-                                help="make a Pull Request to merge branch-gen if different than active branch and files were generated")
     instruct_group.add_argument('--instruct-issues', dest='instruct_issues', action='store',
                                 type=str, nargs='+', metavar='FNMATCH',
                                 help="fnmatch patterns matching translation files to instruct in Issues")
@@ -356,17 +366,29 @@ if __name__ == '__main__':
         log.info("Finished tracking given translation files.")
 
         # GENERATING inexistent pages
-        if args.gen_stubs:
-            pass
-            #creator = GitUpdater(tracks, args.git_repo, Actor(GIT_COMMITTER, GIT_COMMITTER_EMAIL), Actor(GIT_AUTHOR, GIT_AUTHOR_EMAIL))
-            #log.info("Started creating stubs.")
-            #creator.create_stubs(templates.STUB_COMMIT_MSG, templates.STUB_FILE_CONTENT)
-            #log.info("Finished updating stub TBC files.")
+        if args.gen_branch:
+            branch = args.gen_branch
+        else:
+            branch = args.git_repo.active_branch.name
 
-        # UPDATING Issues / Projects
+        gitter = GitUpdater(tracks, args.git_repo, args.gen_committer, args.gen_author, branch)
+
+        if args.gen_stubs:
+            log.info("Started creating stubs for To Create translations.")
+            gitter.create_stubs(args.stub_commit, args.stub_template, args.gen_stubs)
+            log.info("Finished updating stub files.")
+
+        if args.gen_copy:
+            log.info("Started copying original files to translation files for To Create translations.")
+            gitter.create_copies(args.copy_commit, args.gen_copy)
+            log.info("Finished copying original files to translation files.")
+
         if args.request_merge:
-            # TODO make PR
-            pass
+            gitter.finish(pull_request=args.github_repo, force_push=True)
+        else:
+            gitter.finish(force_push=True)
+
+        # INSTRUCTING Issues / Projects
         if args.instruct_issues:
             body_templater = make_templater({
                 Status.TBC: args.issue_create_template,

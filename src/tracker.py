@@ -361,6 +361,9 @@ def has_tbi_header(blob):
         post = frontmatter.loads(blob.data_stream.read())
     except (AttributeError, IOError):
         raise ValueError("invalid blob to read header from")
+    except UnicodeDecodeError:
+        # not frontmatter type file
+        return False
     return HEADER_TBI_KEY in post and post[HEADER_TBI_KEY] == HEADER_TBI_VALUE
 
 

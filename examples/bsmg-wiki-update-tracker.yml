@@ -34,22 +34,22 @@ jobs:
           translations: |
             fr:wiki/fr
           filter: |
-            **/*.md
+            **/*
           exclude: |
             docs/.vuepress/**
           # AUTO GENERATION
           branch-gen: "wut-auto"
+          request-merge: "true"
           gen-stubs: |
             *.md
           stub-commit-msg: ":tada: Creating stub translation pages"
           stub-template: "bsmg-wiki-update-tracker/gen-stub-template.md"
           gen-copy: |
-            *
+            *.png
           # INSTRUCTING
           token: ${{ steps.get_token.outputs.app_token }}
-          request-merge: "true"
           instruct-projects: |
-            "*.md"
+            *.md
           project-title-template: "Wiki {t.translation.language} Update Tracker"
           project-description-template: "{t.translation.language} translation effort."
           project-column-create-template: "To Initialize"

@@ -15,7 +15,7 @@ arg_stubcommit=$8  # 8) stub-commit
 arg_stubtemplate=$9  # 9) stub-template
 arg_gencopy=${10}  # 10) gen-copy, \n separated
 arg_copycommit=${11}  # 11) copy-commit
-arg_branchgen=${12}  # 12) branch-gen
+arg_genbranch=${12}  # 12) gen-branch
 arg_repository=${13}  # 13) repository
 arg_token=${14}  # 14) token
 arg_requestmerge=${15}  # 15) request-merge
@@ -77,7 +77,7 @@ if [ -n "$arg_gencopy" ]; then
     args="$args --gen-copy$gencopy"
 fi
 [ -n "$arg_copycommit" ] && args="$args --copy-commit $arg_copycommit"
-[ -n "$arg_branchgen" ] && args="$args --branch-gen $arg_branchgen"
+[ -n "$arg_genbranch" ] && args="$args --gen-branch $arg_genbranch"
 [ -n "$arg_repository" ] && [ -n "$arg_token" ] && args="$args --github $arg_repository $arg_token"
 if [ "$arg_requestmerge" == "true" ] || [ "$arg_requestmerge" == "1" ]; then
     args="$args --request-merge"  # request-merge
