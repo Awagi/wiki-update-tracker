@@ -45,19 +45,19 @@ arg_projectcardorphantemplate=${36}  # 36) project-card-orphan-template
 # set optional arguments
 [ -n "$arg_loglevel" ] && args="$args -l $arg_loglevel"
 [ -n "$arg_repopath" ] && args="$args -r \"$arg_repopath\""
-[ -n "$arg_filters" ] && args="$args --filter ${arg_filters//$'\n'/ }"
-[ -n "$arg_ignores" ] && args="$args --ignore ${arg_ignores//$'\n'/ }"
-[ -n "$arg_genstubs" ] && args="$args --gen-stubs ${arg_genstubs//$'\n'/ }"
+[ -n "$arg_filters" ] && args="$args --filter \"${arg_filters//$'\n'/\"}"
+[ -n "$arg_ignores" ] && args="$args --ignore \"${arg_ignores//$'\n'/\"}"
+[ -n "$arg_genstubs" ] && args="$args --gen-stubs \"${arg_genstubs//$'\n'/\"}"
 [ -n "$arg_stubcommit" ] && args="$args --stub-commit \"$arg_stubcommit\""
 [ -n "$arg_stubtemplate" ] && args="$args --stub-template \"$arg_stubtemplate\""
-[ -n "$arg_gencopy" ] && args="$args --gen-copy ${arg_gencopy//$'\n'/ }"
+[ -n "$arg_gencopy" ] && args="$args --gen-copy \"${arg_gencopy//$'\n'/\"}"
 [ -n "$arg_copycommit" ] && args="$args --copy-commit \"$arg_copycommit\""
 [ -n "$arg_genbranch" ] && args="$args --gen-branch \"$arg_genbranch\""
 [ -n "$arg_repository" ] && [ -n "$arg_token" ] && args="$args --github \"$arg_repository\" \"$arg_token\""
 if [ "$arg_requestmerge" == "true" ] || [ "$arg_requestmerge" == "1" ]; then
     args="$args --request-merge"  # request-merge
 fi
-[ -n "$arg_instructissues" ] && args="$args --instruct-issues ${arg_instructissues//$'\n'/ }"
+[ -n "$arg_instructissues" ] && args="$args --instruct-issues \"${arg_instructissues//$'\n'/\"}"
 [ -n "$arg_issuelabel" ] && args="$args --issue-label \"$arg_issuelabel\""
 [ -n "$arg_issuetitletemplate" ] && args="$args --issue-title-template \"$arg_issuetitletemplate\""
 [ -n "$arg_issuecreatetemplate" ] && args="$args --issue-create-template \"$arg_issuecreatetemplate\""
@@ -65,7 +65,7 @@ fi
 [ -n "$arg_issueupdatetemplate" ] && args="$args --issue-update-template \"$arg_issueupdatetemplate\""
 [ -n "$arg_issueuptodatetemplate" ] && args="$args --issue-uptodate-template \"$arg_issueuptodatetemplate\""
 [ -n "$arg_issueorphantemplate" ] && args="$args --issue-orphan-template \"$arg_issueorphantemplate\""
-[ -n "$arg_instructprojects" ] && args="$args --instruct-projects \"${arg_instructprojects//$'\n'/ }\""
+[ -n "$arg_instructprojects" ] && args="$args --instruct-projects \"${arg_instructprojects//$'\n'/\"}"
 [ -n "$arg_projecttitletemplate" ] && args="$args --project-title-template \"$arg_projecttitletemplate\""
 [ -n "$arg_projectdescriptiontemplate" ] && args="$args --project-description-template \"$arg_projectdescriptiontemplate\""
 [ -n "$arg_projectcolumncreatetemplate" ] && args="$args --project-column-create-template \"$arg_projectcolumncreatetemplate\""
@@ -81,7 +81,7 @@ fi
 
 # set positional arguments
 args="$args \"$arg_original\""
-args="$args ${arg_translations//$'\n'/ }"
+args="$args \"${arg_translations//$'\n'/\"}"
 
 cmdargs="$cmd$args"
 
