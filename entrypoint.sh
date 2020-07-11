@@ -60,7 +60,7 @@ if [ -n "$arg_genstubs" ]; then
     args="$args --gen-stubs$genstubs"
 fi
 [ -n "$arg_stubcommit" ] && args="$args --stub-commit $arg_stubcommit"
-[ -n "$arg_stubtemplate" ] && args="$args --stub-template '$arg_stubtemplate'"
+[ -n "$arg_stubtemplate" ] && args="$args --stub-template \"$arg_stubtemplate\""
 if [ -n "$arg_gencopy" ]; then
     IFS='\n' read -ra array_gencopy <<< "$arg_gencopy"
     for x in ${array_gencopy[@]}; do
@@ -68,7 +68,7 @@ if [ -n "$arg_gencopy" ]; then
     done
     args="$args --gen-copy$gencopy"
 fi
-[ -n "$arg_copycommit" ] && args="$args --copy-commit '$arg_copycommit'"
+[ -n "$arg_copycommit" ] && args="$args --copy-commit \"$arg_copycommit\""
 [ -n "$arg_genbranch" ] && args="$args --gen-branch $arg_genbranch"
 [ -n "$arg_repository" ] && [ -n "$arg_token" ] && args="$args --github $arg_repository $arg_token"
 if [ "$arg_requestmerge" == "true" ] || [ "$arg_requestmerge" == "1" ]; then
@@ -82,7 +82,7 @@ if [ -n "$arg_instructissues" ]; then
     args="$args --instruct-issues$instructissues"
 fi
 [ -n "$arg_issuelabel" ] && args="$args --issue-label $arg_issuelabel"
-[ -n "$arg_issuetitletemplate" ] && args="$args --issue-title-template '$arg_issuetitletemplate'"
+[ -n "$arg_issuetitletemplate" ] && args="$args --issue-title-template \"$arg_issuetitletemplate\""
 [ -n "$arg_issuecreatetemplate" ] && args="$args --issue-create-template $arg_issuecreatetemplate"
 [ -n "$arg_issueinitializetemplate" ] && args="$args --issue-initialize-template $arg_issueinitializetemplate"
 [ -n "$arg_issueupdatetemplate" ] && args="$args --issue-update-template $arg_issueupdatetemplate"
@@ -95,13 +95,13 @@ if [ -n "$arg_instructprojects" ]; then
     done
     args="$args --instruct-projects$instructprojects"
 fi
-[ -n "$arg_projecttitletemplate" ] && args="$args --project-title-template '$arg_projecttitletemplate'"
-[ -n "$arg_projectdescriptiontemplate" ] && args="$args --project-description-template '$arg_projectdescriptiontemplate'"
-[ -n "$arg_projectcolumncreatetemplate" ] && args="$args --project-column-create-template '$arg_projectcolumncreatetemplate'"
-[ -n "$arg_projectcolumninitializetemplate" ] && args="$args --project-column-initialize-template '$arg_projectcolumninitializetemplate'"
-[ -n "$arg_projectcolumnupdatetemplate" ] && args="$args --project-column-update-template '$arg_projectcolumnupdatetemplate'"
-[ -n "$arg_projectcolumnuptodatetemplate" ] && args="$args --project-column-uptodate-template '$arg_projectcolumnuptodatetemplate'"
-[ -n "$arg_projectcolumnorphantemplate" ] && args="$args --project-column-orphan-template '$arg_projectcolumnorphantemplate'"
+[ -n "$arg_projecttitletemplate" ] && args="$args --project-title-template \"$arg_projecttitletemplate\""
+[ -n "$arg_projectdescriptiontemplate" ] && args="$args --project-description-template \"$arg_projectdescriptiontemplate\""
+[ -n "$arg_projectcolumncreatetemplate" ] && args="$args --project-column-create-template \"$arg_projectcolumncreatetemplate\""
+[ -n "$arg_projectcolumninitializetemplate" ] && args="$args --project-column-initialize-template \"$arg_projectcolumninitializetemplate\""
+[ -n "$arg_projectcolumnupdatetemplate" ] && args="$args --project-column-update-template \"$arg_projectcolumnupdatetemplate\""
+[ -n "$arg_projectcolumnuptodatetemplate" ] && args="$args --project-column-uptodate-template \"$arg_projectcolumnuptodatetemplate\""
+[ -n "$arg_projectcolumnorphantemplate" ] && args="$args --project-column-orphan-template \"$arg_projectcolumnorphantemplate\""
 [ -n "$arg_projectcardcreatetemplate" ] && args="$args --project-card-create-template $arg_projectcardcreatetemplate"
 [ -n "$arg_projectcardinitializetemplate" ] && args="$args --project-card-initialize-template $arg_projectcardinitializetemplate"
 [ -n "$arg_projectcardupdatetemplate" ] && args="$args --project-card-update-template $arg_projectcardupdatetemplate"
