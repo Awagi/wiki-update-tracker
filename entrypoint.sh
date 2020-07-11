@@ -59,7 +59,7 @@ if [ -n "$arg_genstubs" ]; then
     done
     args="$args --gen-stubs$genstubs"
 fi
-[ -n "$arg_stubcommit" ] && args="$args --stub-commit $arg_stubcommit"
+[ -n "$arg_stubcommit" ] && args="$args --stub-commit \"$arg_stubcommit\""
 [ -n "$arg_stubtemplate" ] && args="$args --stub-template \"$arg_stubtemplate\""
 if [ -n "$arg_gencopy" ]; then
     IFS='\n' read -ra array_gencopy <<< "$arg_gencopy"
