@@ -45,6 +45,13 @@ arg_projectcardorphantemplate=${36}  # 36) project-card-orphan-template
 # set optional arguments
 [ -n "$arg_loglevel" ] && args="$args -l $arg_loglevel"
 [ -n "$arg_repopath" ] && args="$args -r $arg_repopath"
+if [ -n "$arg_filters" ]; then
+    IFS='\n' read -ra array_filters <<< "$arg_filters"
+    for x in ${array_filters[@]}; do
+        filters="$filters $x"
+    done
+    args="$args --filters$filters"
+fi
 if [ -n "$arg_ignores" ]; then
     IFS='\n' read -ra array_ignores <<< "$arg_ignores"
     for x in ${array_ignores[@]}; do
@@ -118,7 +125,7 @@ args="$args$translations"
 
 echo "$cmd$args"
 
-result=$($cmd$args)
+result=`$cmd$args`
 if [ $? -eq 1 ]; then
     echo "::error:: Script failure, check logs"
     exit 1
