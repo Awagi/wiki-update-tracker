@@ -43,7 +43,7 @@ arg_projectcardorphantemplate=${36}  # 36) project-card-orphan-template
 
 # build arguments for script
 # set optional arguments
-[ -n "$arg_loglevel" ] && args="$args -l '$arg_loglevel'"
+[ -n "$arg_loglevel" ] && args="$args -l $arg_loglevel"
 [ -n "$arg_repopath" ] && args="$args -r \"$arg_repopath\""
 [ -n "$arg_filters" ] && args="$args --filter ${arg_filters//$'\n'/ }"
 [ -n "$arg_ignores" ] && args="$args --ignore ${arg_ignores//$'\n'/ }"
