@@ -45,49 +45,19 @@ arg_projectcardorphantemplate=${36}  # 36) project-card-orphan-template
 # set optional arguments
 [ -n "$arg_loglevel" ] && args="$args -l $arg_loglevel"
 [ -n "$arg_repopath" ] && args="$args -r $arg_repopath"
-if [ -n "$arg_filters" ]; then
-    IFS="\n" read -ra array_filters <<< "$arg_filters"
-    for x in ${array_filters[@]}; do
-        filters="$filters $x"
-    done
-    args="$args --filter$filters"
-fi
-if [ -n "$arg_ignores" ]; then
-    IFS="\n" read -ra array_ignores <<< "$arg_ignores"
-    for x in ${array_ignores[@]}; do
-        ignores="$ignores $x"
-    done
-    args="$args -i$ignores"
-fi
-if [ -n "$arg_genstubs" ]; then
-    IFS="\n" read -ra array_genstubs <<< "$arg_genstubs"
-    for x in ${array_genstubs[@]}; do
-        genstubs="$genstubs $x"
-    done
-    args="$args --gen-stubs$genstubs"
-fi
+[ -n "$arg_filters" ] && args="$args --filter ${$arg_filters/\\n/ }"
+[ -n "$arg_ignores" ] && args="$args --ignore ${$arg_ignores/\\n/ }"
+[ -n "$arg_genstubs" ] && args="$args --gen-stubs ${$arg_genstubs/\\n/ }"
 [ -n "$arg_stubcommit" ] && args="$args --stub-commit \"$arg_stubcommit\""
 [ -n "$arg_stubtemplate" ] && args="$args --stub-template \"$arg_stubtemplate\""
-if [ -n "$arg_gencopy" ]; then
-    IFS="\n" read -ra array_gencopy <<< "$arg_gencopy"
-    for x in ${array_gencopy[@]}; do
-        gencopy="$gencopy $x"
-    done
-    args="$args --gen-copy$gencopy"
-fi
+[ -n "$arg_gencopy" ] && args="$args --gen-copy ${$arg_copy/\\n/ }"
 [ -n "$arg_copycommit" ] && args="$args --copy-commit \"$arg_copycommit\""
 [ -n "$arg_genbranch" ] && args="$args --gen-branch $arg_genbranch"
 [ -n "$arg_repository" ] && [ -n "$arg_token" ] && args="$args --github $arg_repository $arg_token"
 if [ "$arg_requestmerge" == "true" ] || [ "$arg_requestmerge" == "1" ]; then
     args="$args --request-merge"  # request-merge
 fi
-if [ -n "$arg_instructissues" ]; then
-    IFS="\n" read -ra array_instructissues <<< "$arg_instructissues"
-    for x in ${array_instructissues[@]}; do
-        instructissues="$instructissues $x"
-    done
-    args="$args --instruct-issues$instructissues"
-fi
+[ -n "$arg_instructissues" ] && args="$args --instruct-issues ${$arg_instructissues/\\n/ }"
 [ -n "$arg_issuelabel" ] && args="$args --issue-label $arg_issuelabel"
 [ -n "$arg_issuetitletemplate" ] && args="$args --issue-title-template \"$arg_issuetitletemplate\""
 [ -n "$arg_issuecreatetemplate" ] && args="$args --issue-create-template $arg_issuecreatetemplate"
@@ -95,13 +65,7 @@ fi
 [ -n "$arg_issueupdatetemplate" ] && args="$args --issue-update-template $arg_issueupdatetemplate"
 [ -n "$arg_issueuptodatetemplate" ] && args="$args --issue-uptodate-template $arg_issueuptodatetemplate"
 [ -n "$arg_issueorphantemplate" ] && args="$args --issue-orphan-template $arg_issueorphantemplate"
-if [ -n "$arg_instructprojects" ]; then
-    IFS="\n" read -ra array_instructprojects <<< "$arg_instructprojects"
-    for x in ${array_instructprojects[@]}; do
-        instructprojects="$instructprojects $x"
-    done
-    args="$args --instruct-projects$instructprojects"
-fi
+[ -n "$arg_instructprojects" ] && args="$args --instruct-projects ${$arg_instructprojects/\\n/ }"
 [ -n "$arg_projecttitletemplate" ] && args="$args --project-title-template \"$arg_projecttitletemplate\""
 [ -n "$arg_projectdescriptiontemplate" ] && args="$args --project-description-template \"$arg_projectdescriptiontemplate\""
 [ -n "$arg_projectcolumncreatetemplate" ] && args="$args --project-column-create-template \"$arg_projectcolumncreatetemplate\""
@@ -117,11 +81,7 @@ fi
 
 # set positional arguments
 args="$args $arg_original"
-IFS="\n" read -ra array_translations <<< "${arg_translations}"
-for x in ${array_translations[@]}; do
-    translations="$translations $x"
-done
-args="$args$translations"
+args="$args ${$arg_translations/\\n/ }"
 
 echo "$cmd$args"
 
