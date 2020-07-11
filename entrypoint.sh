@@ -83,9 +83,14 @@ fi
 args="$args \"$arg_original\""
 args="$args ${arg_translations//$'\n'/ }"
 
-echo "$cmd$args"
+cmdargs="$cmd$args"
 
-result=`$cmd$args`
+echo $cmdargs
+
+sh -c "$cmdargs"
+
+result=$(sh -c "$cmdargs")
+
 if [ $? != 0 ]; then
     echo "::error:: Script failure, check logs"
     exit 1
