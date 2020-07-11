@@ -50,7 +50,7 @@ arg_projectcardorphantemplate=${36}  # 36) project-card-orphan-template
 [ -n "$arg_genstubs" ] && args="$args --gen-stubs ${arg_genstubs//$'\n'/ }"
 [ -n "$arg_stubcommit" ] && args="$args --stub-commit \"$arg_stubcommit\""
 [ -n "$arg_stubtemplate" ] && args="$args --stub-template \"$arg_stubtemplate\""
-[ -n "$arg_gencopy" ] && args="$args --gen-copy ${arg_copy//$'\n'/ }"
+[ -n "$arg_gencopy" ] && args="$args --gen-copy ${arg_gencopy//$'\n'/ }"
 [ -n "$arg_copycommit" ] && args="$args --copy-commit \"$arg_copycommit\""
 [ -n "$arg_genbranch" ] && args="$args --gen-branch \"$arg_genbranch\""
 [ -n "$arg_repository" ] && [ -n "$arg_token" ] && args="$args --github \"$arg_repository\" \"$arg_token\""
@@ -86,8 +86,6 @@ args="$args ${arg_translations//$'\n'/ }"
 cmdargs="$cmd$args"
 
 echo $cmdargs
-
-sh -c "$cmdargs"
 
 result=$(sh -c "$cmdargs")
 
