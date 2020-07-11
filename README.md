@@ -102,7 +102,7 @@ Then use this job in your workflow file:
     # Language tag must respect RFC5646.
     #
     # REQUIRED.
-    translations: |
+    translations: |-
       fr:docs/fr
       cs:docs/cs
 
@@ -113,7 +113,7 @@ Then use this job in your workflow file:
     # More info about glob patterns: https://docs.python.org/3.6/library/glob.html
     #
     # Not required. Default: '**/*'.
-    filters: |
+    filters: |-
       **/*.md
       **/*.png
 
@@ -122,7 +122,7 @@ Then use this job in your workflow file:
     # More info about glob patterns: https://docs.python.org/3.6/library/glob.html
     #
     # Not required. Default: ''.
-    ignores: |
+    ignores: |-
       **/README.md
 
   # 2) GENERATION
@@ -132,7 +132,7 @@ Then use this job in your workflow file:
     # More info about fnmatch patterns: https://docs.python.org/3.6/library/fnmatch.html
     #
     # Not required. Default: ''.
-    gen-stubs: |
+    gen-stubs: |-
       *.md
 
     # The commit message when generating stub files.
@@ -153,7 +153,7 @@ Then use this job in your workflow file:
     # More info about fnmatch patterns: https://docs.python.org/3.6/library/fnmatch.html
     #
     # Not required. Default: ''.
-    gen-copy: |
+    gen-copy: |-
       *.png
 
     # The commit message when generating file copies.
@@ -199,7 +199,7 @@ Then use this job in your workflow file:
     # The GitHub App token requires read/write access to Issues.
     #
     # Not required. Default: ''
-    instruct-issues: |
+    instruct-issues: |-
       *.md
 
     # The label name to manage issues, issues not labelled with it won't be processed.
@@ -265,7 +265,7 @@ Then use this job in your workflow file:
     # The Github App token requires read/write access to Projects.
     #
     # Not required. Default: ''.
-    instruct-projects: |
+    instruct-projects: |-
       *.md
 
     # The project name template.
