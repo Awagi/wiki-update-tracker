@@ -43,32 +43,32 @@ arg_projectcardorphantemplate=${36}  # 36) project-card-orphan-template
 
 # build arguments for script
 # set optional arguments
-[ -n "$arg_loglevel" ] && args="$args -l \"$arg_loglevel\""
-[ -n "$arg_repopath" ] && args="$args -r \"$arg_repopath\""
+[ -n "$arg_loglevel" ] && args="$args -l $arg_loglevel"
+[ -n "$arg_repopath" ] && args="$args -r $arg_repopath"
 if [ -n "$arg_ignores" ]; then
     IFS='\n' read -ra array_ignores <<< "$arg_ignores"
     for x in ${array_ignores[@]}; do
-        ignores="$ignores \"$x\""
+        ignores="$ignores $x"
     done
     args="$args -i$ignores"
 fi
 if [ -n "$arg_genstubs" ]; then
     IFS='\n' read -ra array_genstubs <<< "$arg_genstubs"
     for x in ${array_genstubs[@]}; do
-        genstubs="$genstubs \"$x\""
+        genstubs="$genstubs $x"
     done
     args="$args --gen-stubs$genstubs"
 fi
-[ -n "$arg_stubcommit" ] && args="$args --stub-commit \"$arg_stubcommit\""
-[ -n "$arg_stubtemplate" ] && args="$args --stub-template \"$arg_stubtemplate\""
+[ -n "$arg_stubcommit" ] && args="$args --stub-commit $arg_stubcommit"
+[ -n "$arg_stubtemplate" ] && args="$args --stub-template $arg_stubtemplate"
 if [ -n "$arg_gencopy" ]; then
     IFS='\n' read -ra array_gencopy <<< "$arg_gencopy"
     for x in ${array_gencopy[@]}; do
-        gencopy="$gencopy \"$x\""
+        gencopy="$gencopy $x"
     done
     args="$args --gen-copy$gencopy"
 fi
-[ -n "$arg_copycommit" ] && args="$args --copy-commit \"$arg_copycommit\""
+[ -n "$arg_copycommit" ] && args="$args --copy-commit $arg_copycommit"
 [ -n "$arg_genbranch" ] && args="$args --gen-branch $arg_genbranch"
 [ -n "$arg_repository" ] && [ -n "$arg_token" ] && args="$args --github $arg_repository $arg_token"
 if [ "$arg_requestmerge" == "true" ] || [ "$arg_requestmerge" == "1" ]; then
@@ -77,42 +77,42 @@ fi
 if [ -n "$arg_instructissues" ]; then
     IFS='\n' read -ra array_instructissues <<< "$arg_instructissues"
     for x in ${array_instructissues[@]}; do
-        instructissues="$instructissues \"$x\""
+        instructissues="$instructissues $x"
     done
     args="$args --instruct-issues$instructissues"
 fi
 [ -n "$arg_issuelabel" ] && args="$args --issue-label $arg_issuelabel"
-[ -n "$arg_issuetitletemplate" ] && args="$args --issue-title-template \"$arg_issuetitletemplate\""
-[ -n "$arg_issuecreatetemplate" ] && args="$args --issue-create-template \"$arg_issuecreatetemplate\""
-[ -n "$arg_issueinitializetemplate" ] && args="$args --issue-initialize-template \"$arg_issueinitializetemplate\""
-[ -n "$arg_issueupdatetemplate" ] && args="$args --issue-update-template \"$arg_issueupdatetemplate\""
-[ -n "$arg_issueuptodatetemplate" ] && args="$args --issue-uptodate-template \"$arg_issueuptodatetemplate\""
-[ -n "$arg_issueorphantemplate" ] && args="$args --issue-orphan-template \"$arg_issueorphantemplate\""
+[ -n "$arg_issuetitletemplate" ] && args="$args --issue-title-template $arg_issuetitletemplate"
+[ -n "$arg_issuecreatetemplate" ] && args="$args --issue-create-template $arg_issuecreatetemplate"
+[ -n "$arg_issueinitializetemplate" ] && args="$args --issue-initialize-template $arg_issueinitializetemplate"
+[ -n "$arg_issueupdatetemplate" ] && args="$args --issue-update-template $arg_issueupdatetemplate"
+[ -n "$arg_issueuptodatetemplate" ] && args="$args --issue-uptodate-template $arg_issueuptodatetemplate"
+[ -n "$arg_issueorphantemplate" ] && args="$args --issue-orphan-template $arg_issueorphantemplate"
 if [ -n "$arg_instructprojects" ]; then
     IFS='\n' read -ra array_instructprojects <<< "$arg_instructprojects"
     for x in ${array_instructprojects[@]}; do
-        instructprojects="$instructprojects \"$x\""
+        instructprojects="$instructprojects $x"
     done
     args="$args --instruct-projects$instructprojects"
 fi
-[ -n "$arg_projecttitletemplate" ] && args="$args --project-title-template \"$arg_projecttitletemplate\""
-[ -n "$arg_projectdescriptiontemplate" ] && args="$args --project-description-template \"$arg_projectdescriptiontemplate\""
-[ -n "$arg_projectcolumncreatetemplate" ] && args="$args --project-column-create-template \"$arg_projectcolumncreatetemplate\""
-[ -n "$arg_projectcolumninitializetemplate" ] && args="$args --project-column-initialize-template \"$arg_projectcolumninitializetemplate\""
-[ -n "$arg_projectcolumnupdatetemplate" ] && args="$args --project-column-update-template \"$arg_projectcolumnupdatetemplate\""
-[ -n "$arg_projectcolumnuptodatetemplate" ] && args="$args --project-column-uptodate-template \"$arg_projectcolumnuptodatetemplate\""
-[ -n "$arg_projectcolumnorphantemplate" ] && args="$args --project-column-orphan-template \"$arg_projectcolumnorphantemplate\""
-[ -n "$arg_projectcardcreatetemplate" ] && args="$args --project-card-create-template \"$arg_projectcardcreatetemplate\""
-[ -n "$arg_projectcardinitializetemplate" ] && args="$args --project-card-initialize-template \"$arg_projectcardinitializetemplate\""
-[ -n "$arg_projectcardupdatetemplate" ] && args="$args --project-card-update-template \"$arg_projectcardupdatetemplate\""
-[ -n "$arg_projectcarduptodatetemplate" ] && args="$args --project-card-uptodate-template \"$arg_projectcarduptodatetemplate\""
-[ -n "$arg_projectcardorphantemplate" ] && args="$args --project-card-orphan-template \"$arg_projectcardorphantemplate\""
+[ -n "$arg_projecttitletemplate" ] && args="$args --project-title-template $arg_projecttitletemplate"
+[ -n "$arg_projectdescriptiontemplate" ] && args="$args --project-description-template $arg_projectdescriptiontemplate"
+[ -n "$arg_projectcolumncreatetemplate" ] && args="$args --project-column-create-template $arg_projectcolumncreatetemplate"
+[ -n "$arg_projectcolumninitializetemplate" ] && args="$args --project-column-initialize-template $arg_projectcolumninitializetemplate"
+[ -n "$arg_projectcolumnupdatetemplate" ] && args="$args --project-column-update-template $arg_projectcolumnupdatetemplate"
+[ -n "$arg_projectcolumnuptodatetemplate" ] && args="$args --project-column-uptodate-template $arg_projectcolumnuptodatetemplate"
+[ -n "$arg_projectcolumnorphantemplate" ] && args="$args --project-column-orphan-template $arg_projectcolumnorphantemplate"
+[ -n "$arg_projectcardcreatetemplate" ] && args="$args --project-card-create-template $arg_projectcardcreatetemplate"
+[ -n "$arg_projectcardinitializetemplate" ] && args="$args --project-card-initialize-template $arg_projectcardinitializetemplate"
+[ -n "$arg_projectcardupdatetemplate" ] && args="$args --project-card-update-template $arg_projectcardupdatetemplate"
+[ -n "$arg_projectcarduptodatetemplate" ] && args="$args --project-card-uptodate-template $arg_projectcarduptodatetemplate"
+[ -n "$arg_projectcardorphantemplate" ] && args="$args --project-card-orphan-template $arg_projectcardorphantemplate"
 
 # set positional arguments
 args="$args $arg_original"
 IFS='\n' read -ra array_translations <<< "${arg_translations}"
 for x in ${array_translations[@]}; do
-    translations="$translations \"$x\""
+    translations="$translations $x"
 done
 args="$args$translations"
 
